@@ -6,3 +6,8 @@ __pycache__/
 *.log
 scratch/dogri_extra_raw.json
 scratch/jammu_playlist_raw.json
+
+# Local dev / temp files
+scratch/
+*.txt
+server.py
