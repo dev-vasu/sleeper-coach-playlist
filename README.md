@@ -6,6 +6,35 @@
 
 ---
 
+## 📷 Theme Gallery & Cabin Preview
+
+Explore the beautiful visual layouts custom-designed for each theme:
+
+<table>
+  <tr>
+    <td width="50%">
+      <p align="center"><b>🚂 Classic Train</b></p>
+      <img src="assets/classic_train_preview.jpg" alt="Classic Train Cabin" width="100%" style="border-radius: 10px;" />
+    </td>
+    <td width="50%">
+      <p align="center"><b>🌾 Sad Punjabi</b></p>
+      <img src="assets/punjab_preview.jpg" alt="Sad Punjabi Theme" width="100%" style="border-radius: 10px;" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <p align="center"><b>🏔️ Jammu Dogri</b></p>
+      <img src="assets/jammu_preview.jpg" alt="Jammu Dogri Theme" width="100%" style="border-radius: 10px;" />
+    </td>
+    <td width="50%">
+      <p align="center"><b>🎵 80's English R&B</b></p>
+      <img src="assets/english_preview.jpg" alt="English R&B Theme" width="100%" style="border-radius: 10px;" />
+    </td>
+  </tr>
+</table>
+
+---
+
 ## 📖 The Concept
 Inspired by long overnight train journeys in Indian Railways sleeper coaches, this application combines **ambient sound layering, interactive HTML5 controls, and curated regional soundtracks** to recreate the cozy, nostalgic feeling of traveling by train.
 
