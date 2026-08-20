@@ -2990,7 +2990,7 @@ body.route-english #btnAnnounce {
   display: flex;
 }
 /* Mobile-panel widget (inside compartment-panels) */
-.theme-explorer-widget-mobile {
+.compartment-panels .theme-explorer-widget {
   display: none;
   flex-direction: column;
   gap: 0;
@@ -3003,11 +3003,11 @@ body.route-english #btnAnnounce {
     display: none !important;
   }
   /* Show inline panel widget on mobile */
-  .theme-explorer-widget-mobile {
+  .compartment-panels .theme-explorer-widget {
     display: flex !important;
   }
   /* Mobile widget trigger: full-width pill */
-  .theme-explorer-widget-mobile .theme-explorer-trigger {
+  .compartment-panels .theme-explorer-widget .theme-explorer-trigger {
     width: 100% !important;
     border-radius: 12px !important;
     justify-content: center !important;
@@ -3016,7 +3016,7 @@ body.route-english #btnAnnounce {
     background: rgba(255,255,255,0.05) !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
   }
-  .theme-explorer-widget-mobile .theme-explorer-panel {
+  .compartment-panels .theme-explorer-widget .theme-explorer-panel {
     width: 100% !important;
     position: relative !important;
     bottom: auto !important;
@@ -3029,7 +3029,7 @@ body.route-english #btnAnnounce {
     transform: translateY(8px);
     transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   }
-  .theme-explorer-widget-mobile.open .theme-explorer-panel {
+  .compartment-panels .theme-explorer-widget.open .theme-explorer-panel {
     position: relative !important;
     bottom: auto !important;
     top: auto !important;
@@ -3044,7 +3044,7 @@ body.route-english #btnAnnounce {
     padding: 8px !important;
     box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
   }
-  .theme-explorer-widget-mobile .theme-card {
+  .compartment-panels .theme-explorer-widget .theme-card {
     padding: 12px 14px !important;
     margin-bottom: 6px !important;
     border-radius: 12px !important;
@@ -3230,19 +3230,19 @@ body.route-english #btnAnnounce {
   }
 
   /* Change Vibe widget inline in panel: no absolute positioning */
-  .theme-explorer-widget-mobile {
+  .compartment-panels .theme-explorer-widget {
     flex-shrink: 0 !important;
     margin: 8px 14px !important;
     width: calc(100% - 28px) !important;
   }
-  .theme-explorer-widget-mobile .theme-explorer-trigger {
+  .compartment-panels .theme-explorer-widget .theme-explorer-trigger {
     width: 100% !important;
     border-radius: 12px !important;
     justify-content: center !important;
     padding: 13px 16px !important;
     font-size: 12px !important;
   }
-  .theme-explorer-widget-mobile .theme-explorer-panel {
+  .compartment-panels .theme-explorer-widget .theme-explorer-panel {
     width: 100% !important;
     position: relative !important;
     bottom: auto !important;
@@ -3255,7 +3255,7 @@ body.route-english #btnAnnounce {
     transform: translateY(8px);
     transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   }
-  .theme-explorer-widget-mobile.open .theme-explorer-panel {
+  .compartment-panels .theme-explorer-widget.open .theme-explorer-panel {
     position: relative !important;
     bottom: auto !important;
     top: auto !important;
@@ -3271,7 +3271,7 @@ body.route-english #btnAnnounce {
     box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
   }
 
-  .theme-explorer-widget-mobile .theme-card {
+  .compartment-panels .theme-explorer-widget .theme-card {
     margin-bottom: 6px !important;
     border-radius: 12px !important;
   }
@@ -3435,7 +3435,7 @@ body.fullscreen-active .spotify-glass-player {
   display: none !important;
 }
 body.fullscreen-active .theme-explorer-widget-desktop,
-body.fullscreen-active .theme-explorer-widget-mobile {
+body.fullscreen-active .compartment-panels .theme-explorer-widget {
   display: none !important;
 }
 
