@@ -3345,3 +3345,61 @@ body.route-english #btnAnnounce {
     z-index: 300 !important;
   }
 }
+
+/* ── 4. Landscape Mobile height adjustments for Splash Screen ────────────── */
+@media (max-height: 580px) and (orientation: landscape) {
+  .theme-splash-overlay {
+    align-items: flex-start !important;
+    padding: 20px 16px !important;
+  }
+  .theme-splash-inner {
+    gap: 12px !important;
+    padding: 0 !important;
+  }
+  .theme-splash-logo {
+    font-size: 32px !important;
+    margin-bottom: -6px !important;
+  }
+  .theme-splash-title {
+    font-size: 24px !important;
+  }
+  .theme-splash-subtitle {
+    font-size: 10px !important;
+    letter-spacing: 2px !important;
+  }
+  .theme-splash-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+  }
+  @media (max-width: 580px) {
+    .theme-splash-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+  .theme-splash-card {
+    min-height: 110px !important;
+    border-radius: 12px !important;
+  }
+  .theme-splash-card-content {
+    padding: 8px 6px !important;
+  }
+  .theme-splash-card-emoji {
+    font-size: 20px !important;
+    width: 36px !important;
+    height: 36px !important;
+    margin-bottom: 2px !important;
+    border-width: 1px !important;
+  }
+  .theme-splash-card-name {
+    font-size: 10px !important;
+  }
+  .theme-splash-card-sub {
+    display: none !important; /* Hide description to prevent overflow */
+  }
+  .theme-splash-card-tag {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+    margin-top: 2px !important;
+  }
+}
+
