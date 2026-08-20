@@ -2990,7 +2990,7 @@ body.route-english #btnAnnounce {
   display: flex;
 }
 /* Mobile-panel widget (inside compartment-panels) */
-.compartment-panels .theme-explorer-widget {
+.theme-explorer-widget-mobile {
   display: none;
   flex-direction: column;
   gap: 0;
