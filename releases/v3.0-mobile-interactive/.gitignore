@@ -1,0 +1,13 @@
+.vercel
+.vercel/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+scratch/dogri_extra_raw.json
+scratch/jammu_playlist_raw.json
+
+# Local dev / temp files
+scratch/
+*.txt
+server.py

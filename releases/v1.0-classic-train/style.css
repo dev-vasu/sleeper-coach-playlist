@@ -1,0 +1,3347 @@
+/* ==========================================================================
+   SLEEPER CLASS - HAND-DRAWN IMMERSIVE INTEGRATED ART SYSTEM
+   ========================================================================== */
+
+:root {
+  --font-ui: 'Outfit', sans-serif;
+  --font-digital: 'VT323', monospace;
+  --font-hindi: 'Rozha One', serif;
+  
+  /* Cel-Shaded Style Tokens */
+  --accent-gold: #f39c12;
+  
+  --border-thick: 3.5px solid #111;
+  --shadow-flat: 6px 6px 0px #000;
+  --shadow-flat-small: 3px 3px 0px #000;
+  
+  /* Dynamic values mapped by JS */
+  --train-speed-factor: 1;
+  --needle-l-rot: -45deg;
+  --needle-r-rot: -45deg;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html, body {
+  position: fixed;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: #0c0f12;
+  color: #cbd5e1;
+}
+
+/* Fullscreen Compartment Wrapper */
+.train-compartment {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-color: #0c1216;
+  overflow: hidden;
+}
+
+/* Desktop default wrappers */
+.compartment-visuals {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.compartment-panels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.compartment-panels > * {
+  pointer-events: auto; /* restore clicks for child panels */
+}
+
+/* Fullscreen Canvas overlay */
+.cabin-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 10;
+  pointer-events: none; 
+}
+
+/* Window viewport sits behind the canvas cutout */
+.window-viewport {
+  position: absolute;
+  background: #010204;
+  overflow: hidden;
+  z-index: 1;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Ambient mood lighting overlays */
+.ambient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 40;
+  transition: background 2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.theme-morning .ambient-overlay { background: rgba(255, 235, 180, 0.08); mix-blend-mode: color-burn; }
+.theme-day .ambient-overlay { background: rgba(0, 0, 0, 0); }
+.theme-sunset .ambient-overlay { background: rgba(243, 104, 33, 0.14); mix-blend-mode: color-burn; }
+.theme-night .ambient-overlay { background: rgba(4, 7, 18, 0.75); mix-blend-mode: multiply; }
+
+.spotlight-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 41;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.light-on.theme-night .spotlight-overlay {
+  opacity: 1;
+  background: radial-gradient(circle at 10% 12%, rgba(255, 215, 120, 0.42) 0%, rgba(255, 160, 60, 0.12) 40%, rgba(0,0,0,0) 75%);
+}
+
+.dust-container { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:42; opacity:0; }
+.light-on .dust-container { opacity: 0.25; }
+.dust-particle { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; animation: floatDust 12s linear infinite; }
+@keyframes floatDust {
+  0% { transform: translateY(105vh) translateX(0) scale(0.5); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(-5vh) translateX(60px) scale(1.2); opacity: 0; }
+}
+
+/* ==========================================================================
+   SCENERY & WEATHER LAYERS (Inside the Window)
+   ========================================================================== */
+.scenery-sky { position: absolute; top: 0; left: 0; width: 100%; height: 75%; transition: background 2s; z-index: 1; }
+.theme-morning .scenery-sky { background: linear-gradient(to bottom, #2b4f76, #5d8aa8, #dcb3a6, #fce5cd); }
+.theme-day .scenery-sky { background: linear-gradient(to bottom, #1d3c65, #427ca3, #a2d6db, #f7f9f5); }
+.theme-sunset .scenery-sky { background: linear-gradient(to bottom, #a30e0e, #c0392b, #d35400, #f39c12); }
+.theme-night .scenery-sky { background: linear-gradient(to bottom, #010204, #0b111e, #131d33); }
+
+.sun-moon { width: 48px; height: 48px; border-radius: 50%; position: absolute; transition: all 2s; }
+.theme-morning .sun-moon { background: #ffe3a8; top: 32%; right: 18%; box-shadow: 0 0 35px rgba(255, 227, 168, 0.75); }
+.theme-day .sun-moon { background: #fff6d1; top: 12%; right: 15%; box-shadow: 0 0 30px rgba(255, 246, 209, 0.8); }
+.theme-sunset .sun-moon { background: #e67e22; top: 38%; right: 20%; box-shadow: 0 0 45px rgba(230, 126, 34, 0.9); }
+.theme-night .sun-moon { background: #fdfdfd; top: 15%; right: 18%; box-shadow: 0 0 20px rgba(255, 255, 255, 0.4); }
+
+.cloud-layer { position: absolute; top:0; left:0; width:100%; height:100%; }
+.cloud { position: absolute; background: rgba(255, 255, 255, 0.08); border-radius: 100px; }
+.cloud.c1 { width: 100px; height: 26px; top: 18%; left: 10%; animation: drift 70s linear infinite; }
+.cloud.c2 { width: 150px; height: 32px; top: 10%; left: 60%; animation: drift 95s linear infinite; }
+@keyframes drift {
+  from { transform: translateX(100vw); }
+  to { transform: translateX(-200px); }
+}
+
+.stars-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 2s;
+  background-image: 
+    radial-gradient(1px 1px at 30px 25px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 150px 60px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 280px 15px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 450px 90px, #fff, rgba(0,0,0,0));
+  animation: twinkle 4s infinite ease-in-out;
+}
+.theme-night .stars-layer { opacity: 0.8; }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+.scenery-layer { position: absolute; top: 0; left: 0; width: 200%; height: 100%; pointer-events: none; background-size: 50% 100%; background-repeat: repeat-x; }
+
+/* Distant Watercolor Parallax Hills */
+.theme-morning .layer-mountains {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 180 Q150 110 320 200 T640 160 T960 210 L1000 200 L1000 300 Z' fill='%232c3e50' opacity='0.5'/%3E%3Cpath d='M0 300 L0 210 Q200 150 400 220 T800 190 T1000 230 L1000 300 Z' fill='%231a252f' opacity='0.8'/%3E%3C/svg%3E");
+}
+.theme-day .layer-mountains {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 180 Q150 110 320 200 T640 160 T960 210 L1000 200 L1000 300 Z' fill='%233a596e' opacity='0.45'/%3E%3Cpath d='M0 300 L0 210 Q200 150 400 220 T800 190 T1000 230 L1000 300 Z' fill='%232a4454' opacity='0.75'/%3E%3C/svg%3E");
+}
+.theme-sunset .layer-mountains {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 180 Q150 110 320 200 T640 160 T960 210 L1000 200 L1000 300 Z' fill='%23581f18' opacity='0.5'/%3E%3Cpath d='M0 300 L0 210 Q200 150 400 220 T800 190 T1000 230 L1000 300 Z' fill='%23421510' opacity='0.8'/%3E%3C/svg%3E");
+}
+.theme-night .layer-mountains {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 180 Q150 110 320 200 T640 160 T960 210 L1000 200 L1000 300 Z' fill='%230b1219' opacity='0.65'/%3E%3Cpath d='M0 300 L0 210 Q200 150 400 220 T800 190 T1000 230 L1000 300 Z' fill='%2305080c' opacity='0.9'/%3E%3C/svg%3E");
+}
+.layer-mountains {
+  z-index: 2; bottom: 0;
+}
+
+/* Midground Detailed Indian Village Landscape Silhouettes */
+.theme-morning .layer-landscape {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 260 Q120 250 260 265 T500 255 T750 262 T1000 258 L1000 300 Z' fill='%231e2d2b'/%3E%3Cpath d='M100,260 Q95,210 80,160 L84,160 Q99,210 104,260 Z' fill='%23131e1c'/%3E%3Cpath d='M82,160 Q70,140 50,155 Q68,162 82,160 M82,160 Q75,130 85,125 Q88,145 82,160 M82,160 Q95,130 105,135 Q95,150 82,160 M82,160 Q100,150 115,165 Q98,165 82,160' fill='%23131e1c'/%3E%3Crect x='340' y='238' width='45' height='26' fill='%23261a15' stroke='%23131e1c' stroke-width='1.5'/%3E%3Cpolygon points='330,238 362,212 395,238' fill='%235c3420' stroke='%23131e1c' stroke-width='1.5'/%3E%3Crect x='360' y='246' width='9' height='18' fill='%23000'/%3E%3Ccircle cx='348' cy='246' r='3.5' fill='%23f1c40f'/%3E%3Cpath d='M620,262 L620,205 Q635,175 640,135 L642,135 Q647,175 662,205 L662,262 Z' fill='%23131e1c'/%3E%3Cpolygon points='641,135 656,141 641,148' fill='%23d35400'/%3E%3Ccircle cx='850' cy='250' r='18' fill='%23131e1c'/%3E%3Crect x='847' y='250' width='6' height='40' fill='%23131e1c'/%3E%3C/svg%3E");
+}
+.theme-day .layer-landscape {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 260 Q120 250 260 265 T500 255 T750 262 T1000 258 L1000 300 Z' fill='%231b2e27'/%3E%3Cpath d='M100,260 Q95,210 80,160 L84,160 Q99,210 104,260 Z' fill='%2312211c'/%3E%3Cpath d='M82,160 Q70,140 50,155 Q68,162 82,160 M82,160 Q75,130 85,125 Q88,145 82,160 M82,160 Q95,130 105,135 Q95,150 82,160 M82,160 Q100,150 115,165 Q98,165 82,160' fill='%2312211c'/%3E%3Crect x='340' y='238' width='45' height='26' fill='%232a1e16' stroke='%2312211c' stroke-width='1.5'/%3E%3Cpolygon points='330,238 362,212 395,238' fill='%23663a23' stroke='%2312211c' stroke-width='1.5'/%3E%3Crect x='360' y='246' width='9' height='18' fill='%23000'/%3E%3Ccircle cx='348' cy='246' r='3.5' fill='%23e67e22'/%3E%3Cpath d='M620,262 L620,205 Q635,175 640,135 L642,135 Q647,175 662,205 L662,262 Z' fill='%2312211c'/%3E%3Cpolygon points='641,135 656,141 641,148' fill='%23d35400'/%3E%3Ccircle cx='850' cy='250' r='18' fill='%2312211c'/%3E%3Crect x='847' y='250' width='6' height='40' fill='%2312211c'/%3E%3C/svg%3E");
+}
+.theme-sunset .layer-landscape {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 260 Q120 250 260 265 T500 255 T750 262 T1000 258 L1000 300 Z' fill='%232b120d'/%3E%3Cpath d='M100,260 Q95,210 80,160 L84,160 Q99,210 104,260 Z' fill='%231c0a07'/%3E%3Cpath d='M82,160 Q70,140 50,155 Q68,162 82,160 M82,160 Q75,130 85,125 Q88,145 82,160 M82,160 Q95,130 105,135 Q95,150 82,160 M82,160 Q100,150 115,165 Q98,165 82,160' fill='%231c0a07'/%3E%3Crect x='340' y='238' width='45' height='26' fill='%231f0f0a' stroke='%231c0a07' stroke-width='1.5'/%3E%3Cpolygon points='330,238 362,212 395,238' fill='%23472016' stroke='%231c0a07' stroke-width='1.5'/%3E%3Crect x='360' y='246' width='9' height='18' fill='%23000'/%3E%3Ccircle cx='348' cy='246' r='3.5' fill='%23f1c40f'/%3E%3Cpath d='M620,262 L620,205 Q635,175 640,135 L642,135 Q647,175 662,205 L662,262 Z' fill='%231c0a07'/%3E%3Cpolygon points='641,135 656,141 641,148' fill='%23e74c3c'/%3E%3Ccircle cx='850' cy='250' r='18' fill='%231c0a07'/%3E%3Crect x='847' y='250' width='6' height='40' fill='%231c0a07'/%3E%3C/svg%3E");
+}
+.theme-night .layer-landscape {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 260 Q120 250 260 265 T500 255 T750 262 T1000 258 L1000 300 Z' fill='%2303060a'/%3E%3Cpath d='M100,260 Q95,210 80,160 L84,160 Q99,210 104,260 Z' fill='%23010305'/%3E%3Cpath d='M82,160 Q70,140 50,155 Q68,162 82,160 M82,160 Q75,130 85,125 Q88,145 82,160 M82,160 Q95,130 105,135 Q95,150 82,160 M82,160 Q100,150 115,165 Q98,165 82,160' fill='%23010305'/%3E%3Crect x='340' y='238' width='45' height='26' fill='%23020508' stroke='%23000' stroke-width='1.5'/%3E%3Cpolygon points='330,238 362,212 395,238' fill='%23010305' stroke='%23000' stroke-width='1.5'/%3E%3Crect x='360' y='246' width='9' height='18' fill='%23000'/%3E%3Ccircle cx='348' cy='246' r='3.5' fill='%23f39c12' filter='drop-shadow%280 0 3px %23f1c40f%29'/%3E%3Cpath d='M620,262 L620,205 Q635,175 640,135 L642,135 Q647,175 662,205 L662,262 Z' fill='%23010305'/%3E%3Ccircle cx='850' cy='250' r='18' fill='%23010305'/%3E%3Crect x='847' y='250' width='6' height='40' fill='%23010305'/%3E%3C/svg%3E");
+}
+.layer-landscape {
+  z-index: 3; bottom: 0;
+}
+
+.layer-telegraph { z-index: 4; }
+.wire-container { position: absolute; top: 15px; left: 0; width: 100%; height: 100px; }
+.wire-svg { width: 100%; height: 100%; }
+.pole { position: absolute; bottom: 0; width: 6px; height: 160px; background: #030508; border-radius: 4px; }
+.pole.p1 { left: 15%; } .pole.p2 { left: 55%; } .pole.p3 { left: 95%; }
+.crossbar { position: absolute; top: 25px; left: -15px; width: 36px; height: 5px; background: #111; }
+
+.layer-foreground {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 Q40 280 100 290 T200 285 T400 292 T600 280 T800 295 T1000 288 L1000 300 Z' fill='%2304080a'/%3E%3C/svg%3E");
+  z-index: 5; bottom: 0;
+}
+
+.weather-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 7; opacity: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.0) 85%, rgba(255, 255, 255, 0.38) 95%, rgba(255,255,255,0) 100%),
+    linear-gradient(to right, transparent 50%, rgba(255,255,255,0.18) 51%, transparent 52%);
+  background-size: 24px 240px, 80px 100px; pointer-events: none; transition: opacity 1.2s ease;
+}
+.rain-on .weather-overlay { opacity: 1; animation: dynamicRain 0.22s linear infinite; }
+@keyframes dynamicRain {
+  0% { background-position: 0px 0px, 0px 0px; }
+  100% { background-position: -30px 240px, -45px 100px; }
+}
+
+/* Shutters inside Window Viewport */
+.shutter { position: absolute; left: 0; width: 100%; height: 100%; z-index: 7; transform: translateY(-76%); border-bottom: var(--border-thick); box-shadow: 0 8px 16px rgba(0,0,0,0.8); overflow: hidden; }
+.glass-shutter { background: linear-gradient(to bottom, rgba(132, 219, 254, 0.05), rgba(99, 194, 254, 0.15)); backdrop-filter: blur(0.5px); }
+.glass-glare { width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.05) 43%, rgba(255,255,255,0) 100%); }
+.metal-shutter { background: repeating-linear-gradient(to bottom, #374148 0px, #374148 10px, #1a2024 10px, #1a2024 13px); z-index: 8; }
+
+.shutter-handle {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 26px;
+  background: linear-gradient(to bottom, #eae4cf, #bdae8c); border-top: var(--border-thick); border-bottom: none;
+  cursor: ns-resize; display: flex; align-items: center; justify-content: center; pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+.handle-grip { width: 60px; height: 6px; background: #111; border-radius: 3px; z-index: 2; }
+.handle-latches { position: absolute; bottom: 2px; width: 100%; display: flex; justify-content: space-between; padding: 0 10px; box-sizing: border-box; pointer-events: none; }
+.handle-latches span { width: 12px; height: 6px; background: #e74c3c; border: 1.5px solid #111; border-radius: 1px; }
+
+/* ==========================================================================
+   DYNAMIC INTERACTIVE COMPARTMENT OVERLAYS (Positioned by JS)
+   ========================================================================== */
+
+/* Spinning Fan Blades (Centered over illustrated fan) */
+.fan-blades-overlay {
+  position: absolute;
+  z-index: 12;
+  transform-origin: center center;
+  pointer-events: none;
+  filter: blur(var(--fan-blur, 0px)); /* Hardware-accelerated motion blur filter */
+  will-change: transform, filter;
+  transform: rotateX(41deg) rotate(0deg); /* Tilt in 3D matching the ceiling on page load */
+}
+.fan-blades-overlay .blade {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 24px; /* Substantial, wider lofi blade proportions */
+  background: linear-gradient(to right, #455056, #21292d);
+  border: 1.5px solid #141a1c;
+  /* Classic curved leaf-blade shape tapering at center and widening toward outer edges */
+  border-radius: 30% 70% 70% 30% / 50% 50% 50% 50%;
+  transform-origin: left center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Integrated soft depth drop shadow */
+}
+.fan-blades-overlay .blade.b1 { transform: translateY(-50%) rotate(0deg); }
+.fan-blades-overlay .blade.b2 { transform: translateY(-50%) rotate(120deg); }
+.fan-blades-overlay .blade.b3 { transform: translateY(-50%) rotate(240deg); }
+
+.fan-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  background: radial-gradient(circle, #8c7e62 0%, #3e3321 100%); /* Old brass/metal rivet center */
+  border: 2.5px solid #1a140d;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  z-index: 5;
+}
+
+/* Emergency Chain Box and visible pull handle */
+.emergency-chain-box {
+  background: transparent;
+  border: none;
+  z-index: 14; /* renders above window viewport */
+}
+.chain-instructions { display: none; } 
+.chain-pull-mechanism {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  transform-origin: top center;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.chain-pull-mechanism.pulled {
+  transform: translateY(22px);
+  transition: transform 0.1s ease-out;
+}
+.chain-wire-svg {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+} 
+.chain-line {
+  stroke: #7f8c8d;
+  stroke-width: 3.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 2, 5; /* silver chain link pattern */
+}
+.chain-handle-ring {
+  fill: none;
+  stroke: #c0392b;
+  stroke-width: 5px;
+  transition: stroke 0.2s;
+}
+.chain-handle-ring:hover {
+  stroke: #e74c3c;
+}
+.chain-notice {
+  position: absolute;
+  top: 10px;
+  right: -58px;
+  background: #c0392b;
+  color: #fff;
+  border: 1.5px solid #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: calc(6.5px * var(--cabin-scale, 1));
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 2px 4px;
+  border-radius: 2px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  z-index: 15;
+  text-transform: uppercase;
+  white-space: nowrap;
+} 
+
+/* Vintage Poster Frame */
+.vintage-frame {
+  position: absolute;
+  border: 5px solid #1c110a;
+  background: #111;
+  box-shadow: var(--shadow-flat);
+  border-radius: 2px;
+  z-index: 12;
+}
+.frame-glass { width: 100%; height: 100%; overflow: hidden; border: 2px solid #000; }
+.framed-poster { width: 100%; height: 100%; object-fit: cover; filter: sepia(0.2) contrast(1.1) brightness(0.85); }
+
+/* Newspaper Hotspot overlaying illustrated newspaper */
+.prop-newspaper-hotspot {
+  position: absolute;
+  cursor: pointer;
+  z-index: 20;
+  border-radius: 4px;
+  transition: outline 0.15s;
+}
+.prop-newspaper-hotspot:hover {
+  outline: 2.5px dashed rgba(27, 45, 55, 0.4);
+}
+
+/* Chai Glass Hotspot overlaying illustrated cup */
+.prop-chai-hotspot {
+  position: absolute;
+  cursor: pointer;
+  z-index: 20;
+}
+.tea-steam { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); display: flex; gap: 2.5px; }
+.tea-steam span { display: block; width: 1.5px; height: 10px; background: rgba(255, 255, 255, 0.45); border-radius: 50%; animation: risingSteam 2s infinite linear; opacity: 0; }
+.tea-steam span:nth-child(1) { animation-delay: 0.1s; }
+.tea-steam span:nth-child(2) { animation-delay: 0.7s; }
+.tea-steam span:nth-child(3) { animation-delay: 1.3s; }
+
+/* Clamped Ticket Hotspot */
+.clamped-ticket-hotspot {
+  position: absolute;
+  cursor: pointer;
+  z-index: 20;
+  border-radius: 4px;
+  transition: outline 0.15s;
+}
+.clamped-ticket-hotspot:hover {
+  outline: 2.5px dashed rgba(27, 45, 55, 0.4);
+}
+
+/* Zoomed-in Ticket View overlay */
+.ticket-zoom-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  width: 320px;
+  background: #fbf6df;
+  border: var(--border-thick);
+  border-radius: 8px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.85), var(--shadow-flat);
+  padding: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 90;
+  color: #111;
+}
+.clamped-ticket-hotspot.zoomed .ticket-zoom-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1.0);
+}
+.ticket-header-logo { font-size: 0.65rem; font-weight: 900; text-align: center; border-bottom: 2.5px dashed #111; padding-bottom: 6px; }
+.ticket-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; font-family: monospace; }
+.t-cell small { display: block; font-size: 0.55rem; color: #555; font-weight: bold; }
+.t-cell strong { font-size: 0.75rem; color: #000; font-weight: 900; }
+.ticket-barcode { font-size: 1rem; text-align: center; margin-top: 12px; font-weight: bold; letter-spacing: 2px; }
+.click-to-close { display: block; font-size: 0.45rem; text-align: center; margin-top: 10px; color: #888; font-weight: bold; }
+
+/* ==========================================================================
+   BPL Stereo-90 Cassette Player (Transparent table hotspot)
+   ========================================================================== */
+.bpl-tape-deck-hitbox {
+  position: absolute;
+  z-index: 15;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: outline 0.15s;
+}
+.bpl-tape-deck-hitbox:hover {
+  outline: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+   SPOTIFY-STYLE GLASSMORPHIC MUSIC PLAYER BAR (Floats elegantly at bottom)
+   ========================================================================== */
+.spotify-glass-player {
+  position: fixed;
+  bottom: calc(24px * var(--cabin-scale, 1));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: min(95%, calc(860px * var(--cabin-scale, 1)));
+  height: calc(72px * var(--cabin-scale, 1));
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: calc(36px * var(--cabin-scale, 1));
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 calc(24px * var(--cabin-scale, 1));
+  z-index: 80;
+  box-sizing: border-box;
+}
+
+.player-left-col {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 32%;
+}
+.album-art-container {
+  width: calc(44px * var(--cabin-scale, 1));
+  height: calc(44px * var(--cabin-scale, 1));
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(22px * var(--cabin-scale, 1));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+.album-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.album-art-playing {
+  animation: spinArt 6s linear infinite;
+}
+@keyframes spinArt {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.song-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.song-title {
+  font-size: calc(13px * var(--cabin-scale, 1));
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-artist {
+  font-size: calc(11px * var(--cabin-scale, 1));
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 38%;
+  gap: 6px;
+}
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.control-btn-icon {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: calc(16px * var(--cabin-scale, 1));
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+.control-btn-icon:hover {
+  color: #fff;
+  transform: scale(1.15);
+}
+.control-btn-icon.main-play {
+  font-size: calc(26px * var(--cabin-scale, 1));
+  color: #fff;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+.time-elapsed, .time-total {
+  font-size: calc(10px * var(--cabin-scale, 1));
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+}
+.progress-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+}
+.progress-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: #fff;
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.player-right-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  width: 30%;
+}
+.playlist-pill-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: calc(16px * var(--cabin-scale, 1));
+  color: #fff;
+  padding: calc(6px * var(--cabin-scale, 1)) calc(12px * var(--cabin-scale, 1));
+  font-size: calc(11px * var(--cabin-scale, 1));
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+  white-space: nowrap;
+}
+.playlist-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.volume-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.vol-icon {
+  font-size: calc(12px * var(--cabin-scale, 1));
+  color: rgba(255, 255, 255, 0.6);
+}
+.vol-range {
+  width: calc(70px * var(--cabin-scale, 1));
+  height: calc(4px * var(--cabin-scale, 1));
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+.vol-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* Glass Dropdown Menu */
+.glass-playlist-menu {
+  position: absolute;
+  bottom: 84px;
+  right: 24px;
+  width: 280px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  padding: 6px 0;
+  display: none;
+  flex-direction: column;
+  z-index: 90;
+}
+.glass-playlist-menu.open {
+  display: flex;
+}
+#dynamicMenuItems::-webkit-scrollbar {
+  width: 6px;
+}
+#dynamicMenuItems::-webkit-scrollbar-track {
+  background: transparent;
+}
+#dynamicMenuItems::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+}
+#dynamicMenuItems::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.menu-item.active {
+  background: rgba(255, 255, 255, 0.15);
+}
+.item-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.item-title {
+  font-size: 12px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+/* ==========================================================================================================
+   Glassmorphic Cabin Console (Switchboard)
+   ========================================================================== */
+.glass-control-panel {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: calc(12px * var(--cabin-scale, 1));
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 15;
+  padding: calc(10px * var(--cabin-scale, 1)) calc(8px * var(--cabin-scale, 1));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(6px * var(--cabin-scale, 1));
+}
+.panel-header {
+  font-size: calc(9.5px * var(--cabin-scale, 1));
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: calc(6px * var(--cabin-scale, 1));
+  margin-bottom: 0;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: center;
+  flex-shrink: 0;
+}
+.glass-switch-item {
+  cursor: pointer;
+  padding: calc(6px * var(--cabin-scale, 1)) calc(8px * var(--cabin-scale, 1));
+  border-radius: calc(8px * var(--cabin-scale, 1));
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.glass-switch-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.switch-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: calc(8px * var(--cabin-scale, 1));
+  width: 100%;
+}
+.switch-meta {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2px * var(--cabin-scale, 1));
+  flex: 1;
+  overflow: hidden;
+}
+.switch-title {
+  font-size: calc(12.5px * var(--cabin-scale, 1));
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.switch-desc {
+  font-size: calc(8.5px * var(--cabin-scale, 1));
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sliding Glass Toggles */
+.glass-toggle {
+  width: calc(34px * var(--cabin-scale, 1));
+  height: calc(18px * var(--cabin-scale, 1));
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: calc(9px * var(--cabin-scale, 1));
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+  flex-shrink: 0;
+}
+.toggle-nob {
+  position: absolute;
+  top: calc(2px * var(--cabin-scale, 1));
+  left: calc(2px * var(--cabin-scale, 1));
+  width: calc(12px * var(--cabin-scale, 1));
+  height: calc(12px * var(--cabin-scale, 1));
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
+.glass-toggle.active {
+  background: #e2b865;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.glass-toggle.active .toggle-nob {
+  left: calc(18px * var(--cabin-scale, 1));
+  background: #000;
+}
+
+/* ==========================================================================
+   Coach Time-Table Card (Plaque on the right wall)
+   ========================================================================== */
+.time-of-day-card {
+  position: absolute;
+  background: linear-gradient(135deg, #f2edd3 0%, #e2d7a6 50%, #c5b982 100%); /* Polished brass/bronze gradient */
+  border: calc(2px * var(--cabin-scale, 1)) solid #5a481e;
+  border-radius: calc(6px * var(--cabin-scale, 1));
+  padding: calc(12px * var(--cabin-scale, 1)) calc(14px * var(--cabin-scale, 1));
+  box-shadow: inset 0 0 calc(10px * var(--cabin-scale, 1)) rgba(255,255,255,0.5), 0 calc(4px * var(--cabin-scale, 1)) calc(15px * var(--cabin-scale, 1)) rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--cabin-scale, 1));
+  z-index: 12;
+  color: #3b2d13;
+  box-sizing: border-box;
+}
+
+/* Screw heads in the 4 corners of the control card */
+.screw-head {
+  position: absolute;
+  width: calc(8px * var(--cabin-scale, 1));
+  height: calc(8px * var(--cabin-scale, 1));
+  background: radial-gradient(circle, #f3e6c0 20%, #a28340 70%, #5a481e 100%);
+  border: calc(1px * var(--cabin-scale, 1)) solid #5a481e;
+  border-radius: 50%;
+  box-shadow: inset 1px 1px 1px rgba(255,255,255,0.4), 1px 1px 2px rgba(0,0,0,0.3);
+}
+.screw-head::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: calc(6px * var(--cabin-scale, 1));
+  height: calc(1px * var(--cabin-scale, 1));
+  background: #3e2f12;
+}
+.screw-head.top-left { top: calc(6px * var(--cabin-scale, 1)); left: calc(6px * var(--cabin-scale, 1)); }
+.screw-head.top-right { top: calc(6px * var(--cabin-scale, 1)); right: calc(6px * var(--cabin-scale, 1)); }
+.screw-head.bottom-left { bottom: calc(6px * var(--cabin-scale, 1)); left: calc(6px * var(--cabin-scale, 1)); }
+.screw-head.bottom-right { bottom: calc(6px * var(--cabin-scale, 1)); right: calc(6px * var(--cabin-scale, 1)); }
+
+/* Engraved dividers between card sections */
+.card-section-divider {
+  border: none;
+  border-top: calc(1px * var(--cabin-scale, 1)) solid #997e41;
+  border-bottom: calc(1px * var(--cabin-scale, 1)) solid rgba(255, 255, 255, 0.4);
+  margin: calc(2px * var(--cabin-scale, 1)) 0;
+  width: 100%;
+}
+
+.time-of-day-card .control-label {
+  font-size: calc(9.5px * var(--cabin-scale, 1));
+  font-weight: 900;
+  color: #3b2d13;
+  letter-spacing: calc(0.6px * var(--cabin-scale, 1));
+  text-shadow: 0.5px 0.5px 0px rgba(255, 255, 255, 0.5);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Inset bevel time selector */
+.time-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #a4945b;
+  padding: calc(4px * var(--cabin-scale, 1));
+  border-radius: calc(4px * var(--cabin-scale, 1));
+  gap: calc(4px * var(--cabin-scale, 1));
+  border: calc(1.5px * var(--cabin-scale, 1)) solid #5a481e;
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.time-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #4b3d1b;
+  padding: calc(6px * var(--cabin-scale, 1)) 0;
+  font-size: calc(11px * var(--cabin-scale, 1));
+  font-weight: bold;
+  border-radius: calc(3px * var(--cabin-scale, 1));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.2);
+}
+
+.time-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.time-btn.active {
+  background: #7a1f1d; /* Rich mahogany red */
+  color: #fbf6df;
+  border: calc(1px * var(--cabin-scale, 1)) solid #3e0c06;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: none;
+}
+
+/* Skeuomorphic Train Type Dialer */
+.train-selector-container {
+  position: relative;
+  height: calc(85px * var(--cabin-scale, 1));
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Engraved circle layout helper behind the dial */
+.train-selector-container::before {
+  content: '';
+  position: absolute;
+  width: calc(58px * var(--cabin-scale, 1));
+  height: calc(58px * var(--cabin-scale, 1));
+  border: calc(1.5px * var(--cabin-scale, 1)) dashed rgba(90, 72, 30, 0.35);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.train-rotary-dial {
+  width: calc(40px * var(--cabin-scale, 1));
+  height: calc(40px * var(--cabin-scale, 1));
+  background: linear-gradient(135deg, #374148 0%, #1e252b 100%);
+  border: calc(3px * var(--cabin-scale, 1)) solid #5a481e;
+  border-radius: 50%;
+  box-shadow: 1px 1.5px 3px rgba(0,0,0,0.4), inset 1px 1px 1px rgba(255,255,255,0.2);
+  position: relative;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.25);
+  transform: rotate(0deg);
+}
+
+.train-rotary-dial:active {
+  transform: scale(0.95);
+}
+
+.train-rotary-dial .dial-notch {
+  position: absolute;
+  top: calc(3px * var(--cabin-scale, 1));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(3.5px * var(--cabin-scale, 1));
+  height: calc(9px * var(--cabin-scale, 1));
+  background: #c0392b; /* Inset red index notch */
+  border-radius: calc(1px * var(--cabin-scale, 1));
+}
+
+.train-labels-grid {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.train-label {
+  position: absolute;
+  font-size: calc(9px * var(--cabin-scale, 1));
+  font-weight: 900;
+  color: #6a5323;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+  text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.3);
+  padding: calc(8px * var(--cabin-scale, 1)) calc(12px * var(--cabin-scale, 1)); /* Touch target hitboxes */
+  margin: calc(-8px * var(--cabin-scale, 1)) calc(-12px * var(--cabin-scale, 1));
+  white-space: nowrap; /* Prevent messy label wraps */
+}
+
+.train-label:hover {
+  color: #111;
+  transform: scale(1.05);
+}
+
+.train-label.active {
+  color: #7a1f1d; /* Rich mahogany red index active marker */
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.train-labels-grid [data-type="passenger"],
+.train-labels-grid [data-type="goods"] {
+  top: calc(30px * var(--cabin-scale, 1)) !important;
+}
+
+/* Sound board triggers in a neat 2x2 grid */
+.sound-board-triggers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: calc(6px * var(--cabin-scale, 1));
+}
+
+.trigger-btn {
+  background: linear-gradient(to bottom, #f2edd3 0%, #dcd4b0 100%);
+  border: calc(1.5px * var(--cabin-scale, 1)) solid #5a481e;
+  border-radius: calc(4px * var(--cabin-scale, 1));
+  color: #3b2d13;
+  padding: calc(6px * var(--cabin-scale, 1)) 0;
+  cursor: pointer;
+  box-shadow: 0 calc(2px * var(--cabin-scale, 1)) 0 #5a481e, 1px 2px 3px rgba(0,0,0,0.25);
+  font-weight: bold;
+  font-size: calc(11px * var(--cabin-scale, 1));
+  text-align: center;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+  text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.3);
+}
+
+.trigger-btn:hover {
+  background: linear-gradient(to bottom, #faf7e8 0%, #e9e2c4 100%);
+}
+
+.trigger-btn:active, .trigger-btn.active {
+  transform: translateY(calc(2px * var(--cabin-scale, 1)));
+  box-shadow: 0 0px 0 #5a481e, 0px 0px 1px rgba(0,0,0,0.1);
+}
+
+/* ==========================================================================
+   MODALS
+   ========================================================================== */
+.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index:100; display:flex; justify-content:center; align-items:center; opacity:0; pointer-events:none; transition: opacity 0.3s; }
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.cassette-rack-modal { background: #1b2631; border: var(--border-thick); border-radius: 14px; width: 90%; max-width: 440px; padding: 1.25rem; box-shadow: var(--shadow-flat); display: flex; flex-direction: column; gap: 1rem; transform: translateY(15px); transition: transform 0.3s; }
+.modal-overlay.open .cassette-rack-modal { transform: translateY(0); }
+.cassette-rack-modal h2 { font-family: var(--font-hindi); color: var(--accent-gold); font-size: 1.3rem; border-bottom: 2px dashed #111; padding-bottom: 2px; }
+.cassette-rack-modal p { font-size: 0.7rem; color: #cbd5e1; }
+.rack-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+.cassette-tape-item { background: #0d1115; border: 2px solid #111; border-radius: 6px; height: 65px; cursor: pointer; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: var(--shadow-flat-small); }
+.cassette-tape-item:hover { transform: scale(1.03) translateY(-2px); border-color: var(--accent-gold); }
+.tape-sticker { background: var(--c-accent); color: #111; font-weight: 900; font-size: 0.52rem; padding: 4px; text-align: center; border-bottom: 2px solid #111; }
+.tape-casing { flex: 1; display: flex; justify-content: center; align-items: center; background: #18222c; }
+.spindle-holes { width: 65%; display: flex; justify-content: space-around; }
+.spindle-holes span { width: 14px; height: 14px; background: #000; border: 2.5px solid #111; border-radius: 50%; }
+
+.custom-tape-form { border-top: 2px dashed #111; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 3px; }
+.custom-tape-form label { font-size: 0.6rem; color: #889bb0; }
+.input-group { display: flex; gap: 4px; }
+.custom-yt-input { flex: 1; background: #080b0e; border: 2px solid #111; border-radius: 4px; color: white; padding: 6px 10px; font-size: 0.65rem; outline: none; }
+.mixtape-btn { background: var(--led-glow); color: #000; border: 2px solid #111; font-weight: 900; font-size: 0.65rem; padding: 0 12px; border-radius: 4px; cursor: pointer; box-shadow: 2px 2px 0 #111; }
+.mixtape-btn:active { transform: translateY(2px); box-shadow: 0px 0px 0 #111; }
+.close-rack-btn { background: transparent; border: 2px solid #111; color: #cbd5e1; padding: 4px 12px; border-radius: 4px; cursor: pointer; box-shadow: 2px 2px 0 #111; }
+.close-rack-btn:active { transform: translateY(2px); box-shadow: 0px 0px 0 #111; }
+
+@keyframes risingSteam { 0% { transform: translateY(0) scaleX(1); opacity: 0; } 50% { opacity: 0.4; transform: translateY(-4px) scaleX(1.4); } 100% { transform: translateY(-11px) scaleX(0.2); opacity: 0; } }
+@keyframes sloshTea { 0% { transform: rotate(-2.5deg); } 100% { transform: rotate(2.5deg); } }
+@keyframes brakeJolt {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-2px, 1px) rotate(-0.3deg); }
+  50% { transform: translate(2px, -1px) rotate(0.3deg); }
+  75% { transform: translate(-1px, -2px) rotate(-0.15deg); }
+  100% { transform: translate(1px, 2px) rotate(0.15deg); }
+}
+
+/* Window Sky Title (Deluxe Saloon style integrated inside the sky landscape) */
+.window-sky-title {
+  position: absolute;
+  top: 34%; /* Shifted up slightly as requested by the user */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 6; /* Behind shutters (7/8) but in front of clouds/landscape (1-5) */
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+}
+
+.window-sky-title .line1, .window-sky-title .line2 {
+  font-family: 'Hind', sans-serif;
+  font-size: calc(78px * var(--cabin-scale, 1));
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 0.85; /* Sit tight together */
+  letter-spacing: calc(-1.5px * var(--cabin-scale, 1));
+  margin: 0;
+  text-transform: uppercase;
+  opacity: 0.95;
+  text-shadow: 1px 2px calc(8px * var(--cabin-scale, 1)) rgba(0, 0, 0, 0.45); /* Enhanced shadow for readability against day sky & clouds */
+}
+
+/* ==========================================================================
+   Responsive Adaptability & Overlap Prevention (For Tablet/Mobile Screens)
+   ========================================================================== */
+@media (max-width: 900px) {
+  .spotify-glass-player {
+    width: 95%;
+    padding: 0 16px;
+  }
+  .playlist-pill-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+  .vol-range {
+    width: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .spotify-glass-player {
+    height: 64px;
+    bottom: 16px;
+    padding: 0 12px;
+  }
+  .player-left-col {
+    width: 33%;
+    gap: 8px;
+  }
+  .player-center-col {
+    width: 44%;
+    gap: 4px;
+  }
+  .player-right-col {
+    width: 23%;
+    gap: 6px;
+  }
+  .album-art-container {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  .song-title {
+    font-size: 10px;
+  }
+  .song-artist {
+    font-size: 7.5px;
+  }
+  .playlist-pill-btn {
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+  .vol-range {
+    width: 40px;
+  }
+}
+@media (max-width: 1024px) {
+  /* Hide virtual volume slider on phone/mobile screens where physical volume buttons are used */
+  .volume-slider-container {
+    display: none !important;
+  }
+  .player-left-col {
+    width: 32% !important;
+  }
+  .player-center-col {
+    width: 48% !important;
+  }
+  .player-right-col {
+    width: 20% !important;
+    justify-content: flex-end !important;
+  }
+  .playlist-pill-btn {
+    font-size: 9px !important;
+    padding: 5px 6px !important;
+  }
+}
+@media (max-width: 480px) {
+  .album-art-container {
+    display: none; /* Hide art icon on extremely narrow screens to give space for title meta */
+  }
+  .player-left-col {
+    width: 30%;
+  }
+  .player-center-col {
+    width: 50%;
+  }
+  .player-right-col {
+    width: 20%;
+  }
+  .song-title {
+    font-size: 9px;
+  }
+  .song-artist {
+    font-size: 7px;
+  }
+}
+
+/* Rain splashes on window pane */
+.rain-splash {
+  position: absolute;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.1);
+  animation: splashRipple 0.38s ease-out forwards;
+  z-index: 7; /* On top of the glass pane but covered by metal shutter (z-index 8) */
+}
+
+@keyframes splashRipple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.0);
+    opacity: 0;
+  }
+}
+
+/* Wind particles & blowing leaves */
+.wind-particle {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(180, 110, 50, 0.65);
+  border-radius: 80% 0 55% 0; /* Leaf-like asymmetry */
+  z-index: 5; /* In front of sky/trees but behind the window canvas border */
+  animation: windBlow 0.85s linear forwards;
+}
+.wind-streak {
+  position: absolute;
+  pointer-events: none;
+  height: 1.5px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.22), transparent);
+  z-index: 5;
+  animation: gustBlow 0.55s linear forwards;
+}
+
+@keyframes windBlow {
+  0% {
+    transform: translate3d(0px, 0px, 0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(-350px, 45px, 0) rotate(320deg);
+    opacity: 0;
+  }
+}
+
+@keyframes gustBlow {
+  0% {
+    transform: translate3d(0px, 0px, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.7;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(-400px, 15px, 0);
+    opacity: 0;
+  }
+}/* Mobile Portrait Orientation Prompt Overlay */
+.orientation-overlay {
+  display: none;
+}
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+  .orientation-overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #090d11;
+    z-index: 10000; /* overlay EVERYTHING */
+    color: #f7f9f5;
+    text-align: center;
+    padding: 24px;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  .rotation-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 24px;
+    animation: rotateAnimation 2s infinite ease-in-out;
+  }
+  
+  .rotate-phone-svg {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .orientation-overlay h2 {
+    color: #e2b865;
+    font-size: 20px;
+    margin: 0 0 12px 0;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  
+  .orientation-overlay p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 8px 0;
+    max-width: 280px;
+    line-height: 1.4;
+  }
+  
+  .orientation-overlay .hindi-p {
+    font-family: 'Hind', sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+  }
+}
+
+@keyframes rotateAnimation {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* Desktop default tabs navigation state */
+.mobile-tabs-nav {
+  display: none;
+}
+@media (max-aspect-ratio: 13/10) {
+  /* Restructure container to a vertical grid layout */
+  .train-compartment {
+    display: grid;
+    grid-template-rows: 48vh 1fr;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+  
+  /* Top half is the active animated viewport */
+  .compartment-visuals {
+    grid-row: 1;
+    position: relative;
+    width: 100vw !important;
+    height: 48vh !important;
+    overflow: hidden;
+    left: 0 !important;
+    top: 0 !important;
+  }
+  
+  /* Bottom half is the scrollable console deck */
+  .compartment-panels {
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    overflow-y: auto;
+    background: #0b0f14;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    pointer-events: auto;
+    padding-bottom: 110px; /* Leave space for bottom floating player bar */
+  }
+
+  /* Sticky Tab Bar Header */
+  .mobile-tabs-nav {
+    display: flex;
+    position: sticky;
+    top: 0;
+    margin: -16px -16px 12px -16px; /* pull past padding of parent */
+    background: #0b0f14;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  
+  .tab-nav-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    padding: 14px 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .tab-nav-btn.active {
+    color: #e2b865;
+    border-bottom-color: #e2b865;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  /* Tab-based conditional visibility logic for stack cards */
+  #switchboardPanel,
+  #timeOfDayCard,
+  #clampedTicket,
+  #vintagePoster {
+    display: none !important;
+  }
+
+  .compartment-panels.active-tab-console #switchboardPanel {
+    display: flex !important;
+  }
+  .compartment-panels.active-tab-schedule #timeOfDayCard {
+    display: block !important;
+  }
+  .compartment-panels.active-tab-ticket #clampedTicket,
+  .compartment-panels.active-tab-ticket #vintagePoster {
+    display: flex !important;
+  }
+
+
+  /* Force stack panels scrollably instead of absolute mapping */
+  .glass-control-panel, 
+  .time-of-day-card, 
+  .clamped-ticket-hotspot, 
+  .vintage-frame {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    max-width: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Render ticket detail cards inline directly on mobile for ease of reading */
+  .clamped-ticket-hotspot {
+    background: transparent !important;
+    border: none !important;
+  }
+  .clamped-ticket-hotspot .ticket-zoom-card {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+  }
+
+  /* Center-adjust the vintage frame poster card */
+  .vintage-frame {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  .vintage-frame .frame-glass {
+    width: 130px !important;
+    height: 180px !important;
+  }
+
+  /* Floating Spotify Music player bar constraints */
+  .spotify-glass-player {
+    position: fixed !important;
+    bottom: 12px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 94% !important;
+    max-width: 94vw !important;
+    height: 64px !important;
+    z-index: 150 !important;
+  }
+  
+  .glass-playlist-menu {
+    bottom: 80px !important;
+    right: 12px !important;
+    width: 260px !important;
+    z-index: 200 !important;
+  }
+}
+
+/* Mobile Landscape & Small Screen Height Optimizations */
+@media screen and (max-height: 540px) {
+  .spotify-glass-player {
+    height: 48px !important;
+    bottom: 8px !important;
+    border-radius: 24px !important;
+    padding: 0 12px !important;
+  }
+  .spotify-glass-player .album-art-container {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .spotify-glass-player .track-title {
+    font-size: 11px !important;
+  }
+  .spotify-glass-player .track-artist {
+    font-size: 9px !important;
+  }
+  .spotify-glass-player .player-btn {
+    font-size: 14px !important;
+  }
+  .window-sky-title {
+    display: flex !important;
+    top: 28% !important;
+  }
+  .window-sky-title .line1, 
+  .window-sky-title .line2 {
+    font-size: calc(34px * var(--cabin-scale, 1)) !important;
+    letter-spacing: 0px !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4) !important;
+  }
+  .glass-playlist-menu {
+    bottom: 56px !important;
+    right: 8px !important;
+    width: 230px !important;
+    max-height: 160px !important;
+    overflow-y: auto !important;
+    z-index: 250 !important;
+  }
+  
+  .glass-control-panel {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: calc(6px * var(--cabin-scale, 1)) !important;
+    padding: calc(6px * var(--cabin-scale, 1)) calc(8px * var(--cabin-scale, 1)) !important;
+  }
+  .panel-header {
+    grid-column: span 2 !important;
+    margin-bottom: 2px !important;
+    padding-bottom: 4px !important;
+    font-size: calc(10px * var(--cabin-scale, 1)) !important;
+  }
+  .glass-switch-item {
+    padding: calc(5px * var(--cabin-scale, 1)) calc(6px * var(--cabin-scale, 1)) !important;
+  }
+  .switch-title {
+    font-size: calc(10.5px * var(--cabin-scale, 1)) !important;
+  }
+  .switch-desc {
+    display: none !important;
+  }
+  .glass-toggle {
+    width: calc(26px * var(--cabin-scale, 1)) !important;
+    height: calc(14px * var(--cabin-scale, 1)) !important;
+  }
+  .toggle-nob {
+    width: calc(10px * var(--cabin-scale, 1)) !important;
+    height: calc(10px * var(--cabin-scale, 1)) !important;
+  }
+}
+
+/* Real-time digital clock and online count floating in the sky */
+.sky-clock {
+  position: absolute;
+  top: calc(14px * var(--cabin-scale, 1));
+  left: calc(18px * var(--cabin-scale, 1));
+  z-index: 200 !important;
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: calc(20px * var(--cabin-scale, 1));
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.sky-online-counter {
+  position: absolute;
+  top: calc(14px * var(--cabin-scale, 1));
+  right: calc(18px * var(--cabin-scale, 1));
+  z-index: 200 !important;
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--cabin-scale, 1));
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: calc(16px * var(--cabin-scale, 1));
+  font-weight: 500;
+  opacity: 0.9;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.pulsing-green-dot {
+  width: calc(8px * var(--cabin-scale, 1));
+  height: calc(8px * var(--cabin-scale, 1));
+  background-color: #00ff66;
+  border-radius: 50%;
+  box-shadow: 0 0 calc(6px * var(--cabin-scale, 1)) #00ff66;
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(0, 255, 102, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 calc(6px * var(--cabin-scale, 1)) rgba(0, 255, 102, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(0, 255, 102, 0);
+  }
+}
+
+/* Pseudo-Fullscreen support for iOS/iPhone */
+body.pseudo-fullscreen {
+  overflow: hidden !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+body.pseudo-fullscreen .train-compartment {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: #000000 !important;
+}
+
+/* Skeuomorphic Route Selector Plaque Grid */
+.route-selector {
+  display: grid;
+  grid-template-columns: 1fr;
+  background: #a4945b;
+  padding: calc(4px * var(--cabin-scale, 1));
+  border-radius: calc(4px * var(--cabin-scale, 1));
+  gap: calc(4px * var(--cabin-scale, 1));
+  border: calc(1.5px * var(--cabin-scale, 1)) solid #5a481e;
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.route-btn {
+  background: transparent;
+  border: none;
+  color: #4b3d1b;
+  padding: calc(6px * var(--cabin-scale, 1)) calc(8px * var(--cabin-scale, 1));
+  font-size: calc(10.5px * var(--cabin-scale, 1));
+  font-weight: bold;
+  border-radius: calc(3px * var(--cabin-scale, 1));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.2);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--cabin-scale, 1));
+}
+
+.route-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.route-btn.active {
+  background: #1b2631; /* Deep rich greyish-blue for active state */
+  color: #fbf6df;
+  border: calc(1.5px * var(--cabin-scale, 1)) solid #0d1217;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: none;
+}
+
+/* --- PUNJAB ROUTE SCENERY OVERRIDES (Cozy flat wheat fields & mud huts) --- */
+.route-punjab .layer-mountains {
+  /* Very low, flat distant hills */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 230 Q250 200 500 240 T1000 220 L1000 300 Z' fill='%232c3e50' opacity='0.4'/%3E%3Cpath d='M0 300 L0 250 Q300 230 600 260 T1000 240 L1000 300 Z' fill='%231a252f' opacity='0.6'/%3E%3C/svg%3E") !important;
+}
+.route-punjab .layer-landscape {
+  /* Flat ground with wheat stalks and mud huts */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 270 Q250 265 500 272 T1000 268 L1000 300 Z' fill='%231b2e27'/%3E%3Crect x='150' y='245' width='50' height='26' fill='%233e2723'/%3E%3Cpolygon points='140,245 175,220 210,245' fill='%238d6e63'/%3E%3Crect x='450' y='245' width='40' height='26' fill='%233e2723'/%3E%3Cpolygon points='440,245 470,225 500,245' fill='%238d6e63'/%3E%3Cpath d='M30,270 Q35,230 40,210 M38,210 Q45,220 50,230 M42,210 Q35,220 30,230 M80,270 Q75,240 70,220 M78,270 Q82,235 85,215' stroke='%230f1d18' stroke-width='2' fill='none'/%3E%3Cpath d='M630,270 Q635,230 640,210 M638,210 Q645,220 650,230 M680,270 Q675,240 670,220' stroke='%230f1d18' stroke-width='2' fill='none'/%3E%3C/svg%3E") !important;
+}
+
+/* --- JAMMU ROUTE SCENERY OVERRIDES (Himalayan jagged peaks & pine trees) --- */
+.route-jammu .layer-mountains {
+  /* Steep, sharp jagged peaks */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpolygon points='0,300 0,120 180,50 350,160 520,40 700,180 880,60 1000,140 1000,300' fill='%231f3a52' opacity='0.45'/%3E%3Cpolygon points='0,300 0,160 250,90 480,200 680,110 850,220 1000,130 1000,300' fill='%23132535' opacity='0.75'/%3E%3C/svg%3E") !important;
+}
+.route-jammu .layer-landscape {
+  /* Winding valley floor with pine trees */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 Q150 250 400 270 T1000 260 L1000 300 Z' fill='%230e2017'/%3E%3Cpath d='M120,270 L120,180 M100,240 L120,210 L140,240 Z M105,215 L120,190 L135,215 Z' fill='%2308140e' stroke='%2308140e' stroke-width='2'/%3E%3Cpath d='M420,270 L420,160 M390,230 L420,190 L450,230 Z M395,200 L420,165 L445,200 Z' fill='%2308140e' stroke='%2308140e' stroke-width='2'/%3E%3Cpath d='M780,270 L780,190 M760,250 L780,220 L800,250 Z M765,225 L780,200 L795,225 Z' fill='%2308140e' stroke='%2308140e' stroke-width='2'/%3E%3C/svg%3E") !important;
+}
+
+/* --- ENGLISH HIGHLAND ROUTE SCENERY OVERRIDES (Foggy rolling hills & European pines) --- */
+.route-english .layer-mountains {
+  /* Soft misty rolling highlands */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 C200 120 400 260 700 150 T1000 210 L1000 300 Z' fill='%232c3e50' opacity='0.35'/%3E%3Cpath d='M0 300 C150 180 350 250 600 180 T1000 230 L1000 300 Z' fill='%231a252f' opacity='0.6'/%3E%3C/svg%3E") !important;
+}
+.route-english .layer-landscape {
+  /* Dense mist forests and European style spruces */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='none'%3E%3Cpath d='M0 300 L0 265 Q250 260 500 268 T1000 262 L1000 300 Z' fill='%2319222b'/%3E%3Cpath d='M80,265 L80,140 M55,220 L80,180 L105,220 Z M60,185 L80,150 L100,185 Z' fill='%230e161c' stroke='%230e161c' stroke-width='1.5'/%3E%3Cpath d='M250,265 L250,130 M225,210 L250,170 L275,210 Z M230,175 L250,140 L270,175 Z' fill='%230e161c' stroke='%230e161c' stroke-width='1.5'/%3E%3Cpath d='M580,265 L580,150 M560,230 L580,195 L600,230 Z M565,200 L580,170 L595,200 Z' fill='%230e161c' stroke='%230e161c' stroke-width='1.5'/%3E%3Cpath d='M880,265 L880,135 M855,215 L880,175 L905,215 Z' fill='%230e161c' stroke='%230e161c' stroke-width='1.5'/%3E%3C/svg%3E") !important;
+}
+
+/* Hide train-specific elements in local room themes */
+body.route-punjab #fanBlades,
+body.route-punjab #emergencyChain,
+body.route-punjab #clampedTicket,
+body.route-punjab #vintagePoster,
+body.route-punjab #bplTapeDeck,
+body.route-punjab #shutterGlass,
+body.route-punjab #shutterMetal,
+body.route-punjab #layerTelegraph,
+body.route-punjab #layerForeground,
+body.route-punjab #trainTypeSection,
+body.route-punjab #btnHorn,
+body.route-punjab #btnAnnounce,
+body.route-jammu #fanBlades,
+body.route-jammu #emergencyChain,
+body.route-jammu #clampedTicket,
+body.route-jammu #vintagePoster,
+body.route-jammu #bplTapeDeck,
+body.route-jammu #shutterGlass,
+body.route-jammu #shutterMetal,
+body.route-jammu #layerTelegraph,
+body.route-jammu #layerForeground,
+body.route-jammu #trainTypeSection,
+body.route-jammu #btnHorn,
+body.route-jammu #btnAnnounce,
+body.route-english #fanBlades,
+body.route-english #emergencyChain,
+body.route-english #clampedTicket,
+body.route-english #vintagePoster,
+body.route-english #bplTapeDeck,
+body.route-english #shutterGlass,
+body.route-english #shutterMetal,
+body.route-english #layerTelegraph,
+body.route-english #layerForeground,
+body.route-english #trainTypeSection,
+body.route-english #btnHorn,
+body.route-english #btnAnnounce {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Interactive Diary Hotspot */
+.prop-diary-hotspot {
+  position: absolute;
+  bottom: 25px;
+  left: 41%;
+  width: 250px;
+  height: 120px;
+  cursor: pointer;
+  z-index: 25;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.01);
+  transition: box-shadow 0.3s;
+}
+.prop-diary-hotspot:hover {
+  box-shadow: 0 0 18px rgba(226, 184, 101, 0.5);
+}
+
+/* Diary Zoom Modal Card */
+.diary-zoom-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 440px;
+  max-width: 90%;
+  background: #fdfaf0; /* vintage paper texture coloring */
+  border-radius: 8px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.85), inset 0 0 50px rgba(139,121,94,0.25);
+  border: 1px solid #e5d8be;
+  padding: 35px 30px;
+  z-index: 1000;
+  display: none;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  color: #4a3b32;
+  box-sizing: border-box;
+}
+.diary-zoom-card.open {
+  display: block;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.diary-close {
+  position: absolute;
+  top: 15px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #8b795e;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.diary-close:hover {
+  color: #5c4033;
+}
+.diary-poetry {
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.7;
+  margin-top: 20px;
+  border-left: 3px solid #8b795e;
+  padding-left: 14px;
+  color: #5c4033;
+  font-family: 'Hind', sans-serif;
+  letter-spacing: 0.2px;
+}
+
+/* Warm Golden Parallax Dust/Leaves for Punjab */
+.route-punjab .dust-dot {
+  background: rgba(230, 126, 34, 0.45); /* warm golden orange leaves/spores */
+  box-shadow: 0 0 8px rgba(230, 126, 34, 0.25);
+  animation: floatLeaves 18s linear infinite;
+}
+
+@keyframes floatLeaves {
+  0% {
+    transform: translateY(110vh) translateX(-20px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(120px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Glassmorphic Theme/Route Dropdown */
+.route-dropdown-container {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+}
+.route-dropdown-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-sizing: border-box;
+}
+.route-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.route-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: rgba(25, 25, 25, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  box-sizing: border-box;
+}
+.route-dropdown-menu.open {
+  display: flex;
+}
+.route-dropdown-item {
+  padding: 10px 16px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.route-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.route-dropdown-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Glassmorphic Card overrides for Room Themes (removing railway beige metal plaque) */
+.route-punjab #timeOfDayCard,
+.route-jammu #timeOfDayCard,
+.route-english #timeOfDayCard {
+  background: rgba(25, 25, 25, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: 10px !important;
+  padding: 20px 18px !important;
+  color: #fff !important;
+}
+
+/* Hide screws on room cards */
+.route-punjab #timeOfDayCard .screw-head,
+.route-jammu #timeOfDayCard .screw-head,
+.route-english #timeOfDayCard .screw-head {
+  display: none !important;
+}
+
+/* Label overrides for room cards */
+.route-punjab #timeOfDayCard .control-label,
+.route-jammu #timeOfDayCard .control-label,
+.route-english #timeOfDayCard .control-label {
+  color: rgba(255, 255, 255, 0.8) !important;
+  text-shadow: none !important;
+  font-size: 11px !important;
+  letter-spacing: 1.5px !important;
+  font-weight: 600 !important;
+}
+
+/* Thematic & Symmetrically Legible Sky Title Overrides */
+.route-punjab .window-sky-title .line1,
+.route-punjab .window-sky-title .line2 {
+  color: #ffe0b3 !important; /* Warm peach-gold */
+  text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.95), 0 0 20px rgba(139, 69, 19, 0.5) !important;
+}
+.route-punjab .window-sky-title .line3 {
+  color: #ffd9a6 !important;
+  font-size: calc(16px * var(--cabin-scale, 1)) !important;
+  opacity: 1.0 !important;
+  max-width: 520px !important;
+  text-shadow: 2px 3px 8px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.6) !important;
+  font-style: italic !important;
+  font-family: 'Playfair Display', 'Georgia', serif !important;
+}
+
+.route-jammu .window-sky-title .line1,
+.route-jammu .window-sky-title .line2 {
+  color: #fff9f0 !important; /* Clean ivory */
+  text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.95), 0 0 15px rgba(0, 0, 0, 0.6) !important;
+}
+.route-jammu .window-sky-title .line3 {
+  color: #ffebd6 !important;
+  font-size: calc(16px * var(--cabin-scale, 1)) !important;
+  opacity: 1.0 !important;
+  max-width: 520px !important;
+  text-shadow: 2px 3px 8px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.6) !important;
+  font-style: italic !important;
+  font-family: 'Playfair Display', 'Georgia', serif !important;
+}
+
+.route-english .window-sky-title .line1,
+.route-english .window-sky-title .line2 {
+  color: #ffd899 !important; /* Ambient candle gold */
+  text-shadow: 2px 4px 15px rgba(0, 0, 0, 0.98), 0 0 25px rgba(243, 104, 33, 0.35) !important;
+}
+.route-english .window-sky-title .line3 {
+  color: #ffb85c !important; /* Brighter gold */
+  font-size: calc(17px * var(--cabin-scale, 1)) !important;
+  opacity: 1.0 !important;
+  max-width: 520px !important;
+  text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.98), 0 0 15px rgba(243, 104, 33, 0.4) !important;
+  font-style: italic !important;
+  font-family: 'Playfair Display', 'Georgia', serif !important;
+}
+/* Music Player Taller Vertical Sizing for Room Subpages */
+.route-punjab .spotify-glass-player,
+.route-jammu .spotify-glass-player,
+.route-english .spotify-glass-player {
+  height: calc(96px * var(--cabin-scale, 1)) !important;
+  border-radius: calc(48px * var(--cabin-scale, 1)) !important;
+  padding: 0 calc(32px * var(--cabin-scale, 1)) !important;
+  background: rgba(15, 23, 42, 0.6) !important; /* Darker glass for better presence */
+  bottom: calc(32px * var(--cabin-scale, 1)) !important;
+}
+
+/* Proportional inner elements sizing scaling */
+.route-punjab .album-art-container,
+.route-jammu .album-art-container,
+.route-english .album-art-container {
+  width: calc(64px * var(--cabin-scale, 1)) !important;
+  height: calc(64px * var(--cabin-scale, 1)) !important;
+  font-size: calc(28px * var(--cabin-scale, 1)) !important;
+}
+
+.route-punjab .song-title,
+.route-jammu .song-title,
+.route-english .song-title {
+  font-size: calc(15px * var(--cabin-scale, 1)) !important;
+}
+
+.route-punjab .song-artist,
+.route-jammu .song-artist,
+.route-english .song-artist {
+  font-size: calc(12px * var(--cabin-scale, 1)) !important;
+}
+
+.route-punjab .control-btn-icon,
+.route-jammu .control-btn-icon,
+.route-english .control-btn-icon {
+  font-size: calc(20px * var(--cabin-scale, 1)) !important;
+}
+
+.route-punjab .control-btn-icon.main-play,
+.route-jammu .control-btn-icon.main-play,
+.route-english .control-btn-icon.main-play {
+  font-size: calc(32px * var(--cabin-scale, 1)) !important;
+}
+
+.route-punjab .progress-container,
+.route-jammu .progress-container,
+.route-english .progress-container {
+  gap: 12px !important;
+}
+
+.route-punjab .progress-bar-bg,
+.route-jammu .progress-bar-bg,
+.route-english .progress-bar-bg {
+  height: 6px !important;
+  border-radius: 3px !important;
+}
+
+.route-punjab .progress-bar-fill,
+.route-jammu .progress-bar-fill,
+.route-english .progress-bar-fill {
+  border-radius: 3px !important;
+}
+
+/* Offset playlist dropdown menu above the larger player bar */
+.route-punjab .glass-playlist-menu,
+.route-jammu .glass-playlist-menu,
+.route-english .glass-playlist-menu {
+  bottom: calc(140px * var(--cabin-scale, 1)) !important;
+}
+
+/* ==========================================================================
+   FLOATING THEME EXPLORER WIDGET
+   ========================================================================== */
+.theme-explorer-widget {
+  position: absolute;
+  bottom: calc(110px * var(--cabin-scale, 1));
+  left: calc(28px * var(--cabin-scale, 1));
+  z-index: 85;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.theme-explorer-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50px;
+  padding: 10px 18px 10px 14px;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
+  white-space: nowrap;
+}
+.theme-explorer-trigger:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 200, 100, 0.35);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255, 180, 60, 0.15);
+  transform: translateY(-2px);
+}
+.theme-explorer-icon {
+  font-size: 16px;
+}
+.theme-explorer-label {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 11px;
+}
+.theme-explorer-arrow {
+  font-size: 18px;
+  opacity: 0.6;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.theme-explorer-widget.open .theme-explorer-arrow {
+  transform: rotate(90deg);
+  opacity: 1;
+}
+
+/* Expand Panel */
+.theme-explorer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  width: 260px;
+}
+.theme-explorer-widget.open .theme-explorer-panel {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+.theme-explorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255,255,255,0.5);
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 4px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 2px;
+}
+.theme-explorer-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s;
+}
+.theme-explorer-close:hover { color: #fff; }
+
+/* Theme Cards */
+.theme-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-decoration: none;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+.theme-card:hover {
+  transform: translateX(4px);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+}
+.theme-card-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 14px;
+}
+.theme-card:hover .theme-card-glow { opacity: 1; }
+
+.theme-card-punjab .theme-card-glow { background: radial-gradient(ellipse at left, rgba(255, 160, 60, 0.12), transparent 70%); }
+.theme-card-jammu .theme-card-glow { background: radial-gradient(ellipse at left, rgba(80, 200, 120, 0.12), transparent 70%); }
+.theme-card-english .theme-card-glow { background: radial-gradient(ellipse at left, rgba(120, 100, 255, 0.12), transparent 70%); }
+
+.theme-card-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+.theme-card-info {
+  flex: 1;
+}
+.theme-card-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #fff;
+  text-transform: uppercase;
+}
+.theme-card-desc {
+  font-family: 'Hind', sans-serif;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 2px;
+}
+.theme-card-arrow {
+  font-size: 16px;
+  opacity: 0.3;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.theme-card:hover .theme-card-arrow {
+  opacity: 0.9;
+  transform: translateX(3px);
+}
+
+/* Accent left border per theme */
+.theme-card-punjab { border-left: 3px solid rgba(255, 165, 60, 0.6); }
+.theme-card-jammu  { border-left: 3px solid rgba(80, 210, 120, 0.6); }
+.theme-card-english { border-left: 3px solid rgba(130, 100, 255, 0.6); }
+
+/* ==========================================================================
+   THEME SELECTOR SPLASH OVERLAY (First-visit welcome screen)
+   ========================================================================== */
+.theme-splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Make the background the actual live retro train cabin! */
+  /* Semi-transparent dark overlay + soft glass blur allows the moving cabin & scenery to show through */
+  background: rgba(8, 10, 15, 0.55);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow-y: auto;
+}
+.theme-splash-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 180, 80, 0.0) 10%,
+    rgba(255, 180, 80, 0.8) 35%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(150, 100, 255, 0.8) 65%,
+    rgba(150, 100, 255, 0.0) 90%,
+    transparent 100%
+  );
+  animation: splashTopLine 4s ease-in-out infinite alternate;
+  z-index: 2;
+}
+@keyframes splashTopLine {
+  0%   { opacity: 0.5; transform: scaleX(0.5); }
+  100% { opacity: 1;   transform: scaleX(1); }
+}
+/* Subtle film grain on top of the blurred cabin scenery */
+.theme-splash-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+.theme-splash-overlay.dismissing {
+  opacity: 0;
+  pointer-events: none;
+}
+.theme-splash-overlay.hidden {
+  display: none;
+}
+
+/* ── Ambient floating orbs (gives a warm colored glow over the blurred cabin) ── */
+.splash-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 1;
+  animation: orbDrift 16s ease-in-out infinite alternate;
+}
+.splash-orb-gold {
+  width: 500px; height: 500px;
+  top: -100px; left: -100px;
+  background: radial-gradient(circle, rgba(255,160,40,0.14) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+.splash-orb-purple {
+  width: 450px; height: 450px;
+  bottom: -80px; right: -80px;
+  background: radial-gradient(circle, rgba(140,70,255,0.12) 0%, transparent 70%);
+  animation-delay: -4s;
+}
+.splash-orb-green {
+  width: 400px; height: 400px;
+  bottom: 25%; left: 30%;
+  background: radial-gradient(circle, rgba(40,210,120,0.1) 0%, transparent 70%);
+  animation-delay: -8s;
+}
+@keyframes orbDrift {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  50%  { transform: translate(30px, -20px) scale(1.05); }
+  100% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+/* ── Inner layout ── */
+.theme-splash-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+  padding: 60px 32px 48px;
+  max-width: 1060px;
+  width: 100%;
+}
+
+/* ── Header ── */
+.theme-splash-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.theme-splash-logo {
+  font-size: 76px;
+  animation: splashLogoFloat 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(255, 180, 60, 0.65))
+          drop-shadow(0 0 8px rgba(255, 120, 20, 0.4));
+  line-height: 1;
+}
+@keyframes splashLogoFloat {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50%       { transform: translateY(-6px) rotate(1deg); }
+}
+.theme-splash-title {
+  font-family: 'Rozha One', serif;
+  font-size: clamp(36px, 5.8vw, 68px) !important;
+  font-weight: 400;
+  /* Classy white-to-gold gradient text */
+  background: linear-gradient(135deg, #ffffff 30%, #ffdfaa 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  margin: 0;
+  letter-spacing: 2px;
+  line-height: 1.05;
+  text-shadow: none !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6)) !important;
+}
+.theme-splash-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(11.5px, 1.7vw, 14.5px) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  margin: 0;
+  letter-spacing: 4px !important;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.theme-splash-header::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,180,60,0.6), transparent);
+  margin-top: 8px;
+}
+
+/* ── Grid ── */
+.theme-splash-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+@media (max-width: 760px) {
+  .theme-splash-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+@media (max-width: 400px) {
+  .theme-splash-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+
+/* ── Card base ── */
+.theme-splash-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 295px;
+  border-radius: 22px;
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
+  text-align: center;
+  padding: 0;
+  /* Frost glassmorphism over the active cabin background */
+  background: rgba(15, 18, 25, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  transition:
+    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  box-shadow:
+    0 12px 35px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.theme-splash-card:hover {
+  transform: translateY(-10px) scale(1.03);
+  background: rgba(25, 30, 42, 0.68);
+  border-color: rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 28px 60px rgba(0,0,0,0.65),
+    0 0 35px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.theme-splash-card:active {
+  transform: scale(0.97);
+  transition-duration: 0.12s;
+}
+
+/* Per-card border glow states */
+.theme-splash-train  { border-color: rgba(255, 180, 60, 0.25); }
+.theme-splash-punjab { border-color: rgba(255, 120, 60, 0.25); }
+.theme-splash-jammu  { border-color: rgba(60,  220, 120, 0.22); }
+.theme-splash-english{ border-color: rgba(150, 100, 255, 0.25); }
+
+.theme-splash-train:hover  { border-color: rgba(255,180,60,0.7); box-shadow: 0 28px 60px rgba(0,0,0,0.65), 0 0 35px rgba(255,180,60,0.15), inset 0 1px 0 rgba(255,255,255,0.25); }
+.theme-splash-punjab:hover { border-color: rgba(255,120,60,0.7); box-shadow: 0 28px 60px rgba(0,0,0,0.65), 0 0 35px rgba(255,120,60,0.15), inset 0 1px 0 rgba(255,255,255,0.25); }
+.theme-splash-jammu:hover  { border-color: rgba(60,220,120,0.65); box-shadow: 0 28px 60px rgba(0,0,0,0.65), 0 0 35px rgba(60,220,120,0.12), inset 0 1px 0 rgba(255,255,255,0.25); }
+.theme-splash-english:hover{ border-color: rgba(150,100,255,0.7); box-shadow: 0 28px 60px rgba(0,0,0,0.65), 0 0 35px rgba(150,100,255,0.15), inset 0 1px 0 rgba(255,255,255,0.25); }
+
+/* Card inner ambient background — always visible, brighter on hover */
+.theme-splash-card-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.65;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+.theme-splash-card:hover .theme-splash-card-bg { opacity: 0.95; }
+
+.theme-splash-train  .theme-splash-card-bg { background: linear-gradient(145deg, rgba(255,180,60,0.18) 0%, rgba(200,110,20,0.06) 45%, rgba(0,0,0,0) 80%); }
+.theme-splash-punjab .theme-splash-card-bg { background: linear-gradient(145deg, rgba(255,120,60,0.2) 0%, rgba(200,60,10,0.06) 45%, rgba(0,0,0,0) 80%); }
+.theme-splash-jammu  .theme-splash-card-bg { background: linear-gradient(145deg, rgba(60,220,120,0.16) 0%, rgba(10,150,70,0.06) 45%, rgba(0,0,0,0) 80%); }
+.theme-splash-english .theme-splash-card-bg{ background: linear-gradient(145deg, rgba(150,100,255,0.2) 0%, rgba(90,30,200,0.06) 45%, rgba(0,0,0,0) 80%); }
+
+/* Corner stripe accent */
+.theme-splash-card-stripe {
+  position: absolute;
+  top: 0; right: 0;
+  width: 90px; height: 90px;
+  border-radius: 0 22px 0 100%;
+  opacity: 0.25;
+  transition: opacity 0.3s, width 0.3s, height 0.3s;
+  pointer-events: none;
+}
+.theme-splash-card:hover .theme-splash-card-stripe { opacity: 0.55; width: 110px; height: 110px; }
+.theme-splash-train  .theme-splash-card-stripe { background: radial-gradient(circle at top right, #ffb830, transparent 70%); }
+.theme-splash-punjab .theme-splash-card-stripe { background: radial-gradient(circle at top right, #ff6830, transparent 70%); }
+.theme-splash-jammu  .theme-splash-card-stripe { background: radial-gradient(circle at top right, #30e070, transparent 70%); }
+.theme-splash-english .theme-splash-card-stripe{ background: radial-gradient(circle at top right, #9050ff, transparent 70%); }
+
+/* Card content: sits at the bottom */
+.theme-splash-card-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 28px 18px 24px;
+  width: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%);
+}
+
+/* Glass Badge round container for Emojis */
+.theme-splash-card-emoji {
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  font-size: 36px;
+  margin-bottom: 10px;
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.25),
+    inset 0 2px 5px rgba(255, 255, 255, 0.12);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1;
+}
+.theme-splash-card:hover .theme-splash-card-emoji {
+  transform: scale(1.18) rotate(6deg);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 12px 25px rgba(0, 0, 0, 0.35),
+    inset 0 2px 8px rgba(255, 255, 255, 0.25);
+}
+.theme-splash-card:active .theme-splash-card-emoji {
+  transform: scale(0.92);
+}
+
+.theme-splash-train .theme-splash-card-emoji { border-color: rgba(255, 180, 60, 0.38); }
+.theme-splash-punjab .theme-splash-card-emoji { border-color: rgba(255, 120, 60, 0.38); }
+.theme-splash-jammu .theme-splash-card-emoji { border-color: rgba(60, 220, 120, 0.34); }
+.theme-splash-english .theme-splash-card-emoji { border-color: rgba(150, 100, 255, 0.38); }
+
+.theme-splash-train:hover .theme-splash-card-emoji { border-color: rgba(255, 180, 60, 0.85); box-shadow: 0 0 15px rgba(255, 180, 60, 0.3), inset 0 2px 8px rgba(255, 255, 255, 0.25); }
+.theme-splash-punjab:hover .theme-splash-card-emoji { border-color: rgba(255, 120, 60, 0.85); box-shadow: 0 0 15px rgba(255, 120, 60, 0.3), inset 0 2px 8px rgba(255, 255, 255, 0.25); }
+.theme-splash-jammu:hover .theme-splash-card-emoji { border-color: rgba(60, 220, 120, 0.85); box-shadow: 0 0 15px rgba(60, 220, 120, 0.3), inset 0 2px 8px rgba(255, 255, 255, 0.25); }
+.theme-splash-english:hover .theme-splash-card-emoji { border-color: rgba(150, 100, 255, 0.85); box-shadow: 0 0 15px rgba(150, 100, 255, 0.3), inset 0 2px 8px rgba(255, 255, 255, 0.25); }
+
+.theme-splash-card-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+}
+.theme-splash-card-sub {
+  font-family: 'Hind', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.45;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.theme-splash-card-tag {
+  font-family: 'Outfit', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-top: 6px;
+  border: 1px solid;
+}
+.theme-splash-train  .theme-splash-card-tag { background: rgba(255,180,60,0.22); color: #ffc060; border-color: rgba(255,180,60,0.4); }
+.theme-splash-punjab .theme-splash-card-tag { background: rgba(255,120,60,0.22); color: #ff9070; border-color: rgba(255,120,60,0.4); }
+.theme-splash-jammu  .theme-splash-card-tag { background: rgba(60,220,120,0.22); color: #60ee99; border-color: rgba(60,220,120,0.4); }
+.theme-splash-english .theme-splash-card-tag{ background: rgba(150,100,255,0.22); color: #b088ff; border-color: rgba(150,100,255,0.4); }
+
+/* ── Footnote ── */
+.theme-splash-footnote {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 1.5px;
+  text-align: center;
+  margin: 0;
+  animation: splashFootnotePulse 4s ease-in-out infinite;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+@keyframes splashFootnotePulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+/* ==========================================================================
+   COMPREHENSIVE MOBILE RESPONSIVE STYLES — ALL 4 THEMES
+   Breakpoints:
+     Portrait mobile   → max-aspect-ratio: 13/10
+     Landscape mobile  → max-height: 540px
+     Small portrait    → max-width: 480px
+     Tiny screens      → max-width: 360px
+   ========================================================================== */
+
+/* ── 1. Portrait Layout (all pages) ──────────────────────────────────────── */
+@media (max-aspect-ratio: 13/10) {
+
+  /* Root layout: 2-row grid — scene on top, console on bottom */
+  .train-compartment {
+    display: grid !important;
+    grid-template-rows: 46vh 1fr !important;
+    height: 100dvh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
+  }
+
+  /* Top: scene viewport */
+  .compartment-visuals {
+    grid-row: 1 !important;
+    position: relative !important;
+    width: 100vw !important;
+    height: 46vh !important;
+    overflow: hidden !important;
+    left: 0 !important;
+    top: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Bottom: control panels — scrollable column */
+  .compartment-panels {
+    grid-row: 2 !important;
+    position: relative !important;
+    left: auto !important; top: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: #0b0f14 !important;
+    border-top: 1.5px solid rgba(255,255,255,0.08) !important;
+    box-sizing: border-box !important;
+    padding-bottom: 80px !important; /* space for fixed player bar */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ─── Tab Navigation ─────────────────────────────────────────────────── */
+  .mobile-tabs-nav {
+    display: flex !important;
+    position: sticky !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 50 !important;
+    background: #0b0f14 !important;
+    border-bottom: 1.5px solid rgba(255,255,255,0.08) !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tab-nav-btn {
+    flex: 1 !important;
+    background: transparent !important;
+    border: none !important;
+    color: rgba(255,255,255,0.4) !important;
+    padding: 13px 0 !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    text-align: center !important;
+    transition: all 0.2s ease !important;
+    border-bottom: 2px solid transparent !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+  }
+  .tab-nav-btn.active {
+    color: #e2b865 !important;
+    border-bottom-color: #e2b865 !important;
+  }
+
+  /* Tab-gated visibility */
+  #switchboardPanel, #timeOfDayCard, #clampedTicket, #vintagePoster {
+    display: none !important;
+  }
+  .compartment-panels.active-tab-console #switchboardPanel { display: flex !important; }
+  .compartment-panels.active-tab-schedule #timeOfDayCard  { display: block !important; }
+  .compartment-panels.active-tab-ticket #clampedTicket,
+  .compartment-panels.active-tab-ticket #vintagePoster    { display: flex !important; }
+
+  /* ─── Panel cards: stack full-width ─────────────────────────────────── */
+  .glass-control-panel,
+  .time-of-day-card,
+  .clamped-ticket-hotspot,
+  .vintage-frame {
+    position: relative !important;
+    left: auto !important; top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* Switchboard: 2-column grid */
+  .glass-control-panel {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1px !important;
+    padding: 12px !important;
+  }
+  .panel-header {
+    grid-column: span 2 !important;
+    font-size: 10px !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 4px !important;
+  }
+  .glass-switch-item {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+  }
+  .switch-title { font-size: 11px !important; }
+  .switch-desc  { display: none !important; }
+  .glass-toggle {
+    width: 32px !important;
+    height: 17px !important;
+    flex-shrink: 0 !important;
+  }
+  .toggle-nob {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  /* Console switches on subpages (Punjab/Jammu/English) — same grid treatment */
+  .console-switches {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1px !important;
+    padding: 12px !important;
+    background: #0b0f14 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ─── Ticket card ────────────────────────────────────────────────────── */
+  .clamped-ticket-hotspot {
+    background: transparent !important;
+    border: none !important;
+    padding: 12px !important;
+  }
+  .clamped-ticket-hotspot .ticket-zoom-card {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    left: auto !important; top: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+  }
+
+  /* ─── Vintage poster ─────────────────────────────────────────────────── */
+  .vintage-frame {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: rgba(15,23,42,0.5) !important;
+    border: none !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+  }
+  .vintage-frame .frame-glass { width: 130px !important; }
+
+  /* ─── Fixed player bar at bottom ─────────────────────────────────────── */
+  .spotify-glass-player {
+    position: fixed !important;
+    bottom: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 94vw !important;
+    max-width: 520px !important;
+    height: 62px !important;
+    z-index: 200 !important;
+    padding: 0 14px !important;
+    border-radius: 30px !important;
+    box-sizing: border-box !important;
+  }
+  .album-art-container {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+  }
+  .song-title  { font-size: 12px !important; max-width: 120px !important; }
+  .song-artist { font-size: 10px !important; }
+  .control-btn-icon       { font-size: 16px !important; padding: 4px !important; }
+  .control-btn-icon.main-play { font-size: 22px !important; }
+  .volume-slider-container { display: none !important; } /* hidden on mobile */
+  .playlist-pill-btn {
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* ─── Playlist dropdown menu ─────────────────────────────────────────── */
+  .glass-playlist-menu {
+    position: fixed !important;
+    bottom: 82px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: min(290px, 92vw) !important;
+    max-height: 52vh !important;
+    overflow-y: auto !important;
+    z-index: 300 !important;
+  }
+
+  /* ─── Theme Explorer Widget — bottom-right, above player ─────────────── */
+  .theme-explorer-widget {
+    position: fixed !important;
+    bottom: 82px !important;
+    left: 10px !important;
+    right: auto !important;
+    z-index: 250 !important;
+  }
+  .theme-explorer-trigger {
+    padding: 9px 14px 9px 11px !important;
+    font-size: 11px !important;
+    border-radius: 40px !important;
+  }
+  .theme-explorer-label { font-size: 10px !important; }
+  .theme-explorer-panel {
+    width: min(250px, 88vw) !important;
+    bottom: 100% !important;
+    top: auto !important;
+  }
+  .theme-explorer-widget.open .theme-explorer-panel {
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+  }
+  .theme-card { padding: 9px 10px !important; gap: 8px !important; }
+  .theme-card-icon { font-size: 20px !important; width: 28px !important; }
+  .theme-card-name { font-size: 11px !important; }
+  .theme-card-desc { font-size: 10px !important; }
+
+  /* ─── Sky title on subpages ──────────────────────────────────────────── */
+  .window-sky-title {
+    top: 12% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    text-align: center !important;
+    width: 92vw !important;
+  }
+  .window-sky-title .line1,
+  .window-sky-title .line2 {
+    font-size: clamp(24px, 8vw, 48px) !important;
+    line-height: 1.1 !important;
+    letter-spacing: 1px !important;
+  }
+  .window-sky-title .line3 {
+    font-size: clamp(10px, 3vw, 13px) !important;
+    max-width: 85vw !important;
+    line-height: 1.5 !important;
+  }
+
+  /* ─── Clock & online counter ─────────────────────────────────────────── */
+  .sky-clock {
+    font-size: 14px !important;
+    top: 8px !important;
+    left: 10px !important;
+  }
+  .sky-online-counter {
+    font-size: 11px !important;
+    top: 10px !important;
+    right: 10px !important;
+  }
+
+  /* ─── Splash screen grid ─────────────────────────────────────────────── */
+  .theme-splash-inner { padding: 32px 16px 24px !important; gap: 24px !important; }
+  .theme-splash-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .theme-splash-card { min-height: 150px !important; border-radius: 14px !important; }
+  .theme-splash-card-emoji { font-size: 26px !important; }
+  .theme-splash-card-name  { font-size: 12px !important; }
+  .theme-splash-card-sub   { font-size: 10px !important; }
+  .theme-splash-title { font-size: clamp(22px, 7vw, 36px) !important; }
+  .theme-splash-subtitle { font-size: 11px !important; }
+}
+
+/* ── 2. Landscape Mobile (short screens) ─────────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .spotify-glass-player {
+    height: 48px !important;
+    bottom: 6px !important;
+    padding: 0 10px !important;
+    border-radius: 24px !important;
+  }
+  .album-art-container { width: 30px !important; height: 30px !important; }
+  .song-title  { font-size: 11px !important; }
+  .song-artist { display: none !important; }
+  .progress-container { display: none !important; }
+
+  .glass-playlist-menu {
+    bottom: 60px !important;
+    max-height: 55vh !important;
+    width: min(260px, 50vw) !important;
+    right: 8px !important;
+  }
+  .theme-explorer-widget {
+    bottom: 60px !important;
+    left: 8px !important;
+  }
+  .theme-explorer-panel {
+    max-height: 55vh !important;
+    overflow-y: auto !important;
+  }
+  .window-sky-title {
+    top: 6% !important;
+  }
+  .window-sky-title .line1 { font-size: 20px !important; }
+  .window-sky-title .line2 { font-size: 16px !important; }
+  .window-sky-title .line3 { display: none !important; }
+}
+
+/* ── 3. Very small portrait phones (≤ 380px wide) ────────────────────────── */
+@media (max-width: 380px) and (max-aspect-ratio: 13/10) {
+  .theme-splash-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .theme-splash-card { min-height: 120px !important; }
+  .theme-splash-card-name { font-size: 11px !important; }
+  .theme-splash-card-sub  { display: none !important; }
+
+  .song-title { max-width: 90px !important; }
+  .control-btn-icon { padding: 2px !important; }
+}
+
+/* ── Splash card per-theme borders & always-on glow ── */
+.theme-splash-train  { border-color: rgba(255, 160, 40, 0.25) !important; }
+.theme-splash-punjab { border-color: rgba(255, 100, 50, 0.25) !important; }
+.theme-splash-jammu  { border-color: rgba(40, 200, 100, 0.22) !important; }
+.theme-splash-english{ border-color: rgba(120, 60, 255, 0.25) !important; }
+
+.theme-splash-train:hover  { box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(255,160,40,0.15) !important; border-color: rgba(255,160,40,0.5) !important; }
+.theme-splash-punjab:hover { box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(255,100,50,0.15) !important; border-color: rgba(255,100,50,0.5) !important; }
+.theme-splash-jammu:hover  { box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(40,200,100,0.12) !important; border-color: rgba(40,200,100,0.45) !important; }
+.theme-splash-english:hover{ box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(120,60,255,0.15) !important; border-color: rgba(120,60,255,0.5) !important; }
+
+/* Tag colors more vivid */
+.theme-splash-train .theme-splash-card-tag    { background: rgba(255,160,40,0.2) !important; color: #ffc060 !important; border-color: rgba(255,160,40,0.4) !important; }
+.theme-splash-punjab .theme-splash-card-tag   { background: rgba(255,100,50,0.2) !important; color: #ff9070 !important; border-color: rgba(255,100,50,0.4) !important; }
+.theme-splash-jammu .theme-splash-card-tag    { background: rgba(40,200,100,0.2) !important; color: #60ee99 !important; border-color: rgba(40,200,100,0.4) !important; }
+.theme-splash-english .theme-splash-card-tag  { background: rgba(120,60,255,0.2) !important; color: #b088ff !important; border-color: rgba(120,60,255,0.4) !important; }
+
+/* Richer top divider line */
+.theme-splash-overlay::before {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,160,40,0.6) 20%,
+    rgba(255,255,255,0.4) 50%,
+    rgba(120,60,255,0.5) 80%,
+    transparent 100%
+  ) !important;
+  height: 1.5px !important;
+  animation: splashTopLine 4s ease-in-out infinite alternate !important;
+}
+
+/* Emoji scale on active (pressing) */
+.theme-splash-card:active .theme-splash-card-emoji {
+  transform: scale(0.9) !important;
+}
+
+/* Bigger emoji on desktop for more drama */
+@media (min-width: 700px) {
+  .theme-splash-card { min-height: 270px !important; }
+  .theme-splash-card-emoji { font-size: 52px !important; margin-bottom: 8px !important; }
+  .theme-splash-card-name  { font-size: 16px !important; }
+  .theme-splash-card-sub   { font-size: 12px !important; }
+}
+
+/* ==========================================================================
+   CHANGE VIBE WIDGET — Desktop vs Mobile dual display
+   On desktop (landscape): widget sits inside .compartment-visuals, absolutely
+   On mobile (portrait):   widget-desktop hidden; widget-mobile shown in panel
+   ========================================================================== */
+
+/* Desktop widget (inside compartment-visuals) */
+.theme-explorer-widget-desktop {
+  display: flex;
+}
+/* Mobile-panel widget (inside compartment-panels) */
+.theme-explorer-widget-mobile {
+  display: none;
+  flex-direction: column;
+  gap: 0;
+  margin: 12px 16px 0;
+}
+
+@media (max-aspect-ratio: 13/10) {
+  /* Hide floating desktop widget on mobile */
+  .theme-explorer-widget-desktop {
+    display: none !important;
+  }
+  /* Show inline panel widget on mobile */
+  .theme-explorer-widget-mobile {
+    display: flex !important;
+  }
+  /* Mobile widget trigger: full-width pill */
+  .theme-explorer-widget-mobile .theme-explorer-trigger {
+    width: 100% !important;
+    border-radius: 12px !important;
+    justify-content: center !important;
+    padding: 13px 16px !important;
+    font-size: 13px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  .theme-explorer-widget-mobile .theme-explorer-panel {
+    width: 100% !important;
+    position: relative !important;
+    bottom: auto !important;
+    top: auto !important;
+    transform: none !important;
+    margin-top: 8px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+  .theme-explorer-widget-mobile.open .theme-explorer-panel {
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+  .theme-explorer-widget-mobile .theme-card {
+    padding: 12px 14px !important;
+    margin-bottom: 6px !important;
+    border-radius: 12px !important;
+  }
+}
+
+/* ==========================================================================
+   SPLASH SCREEN — Dramatic card stripes + rich visual treatment
+   ========================================================================== */
+
+/* Coloured diagonal stripe on each card (top-right corner accent) */
+.theme-splash-card-stripe {
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 0 20px 0 100%;
+  opacity: 0.25;
+  transition: opacity 0.3s, width 0.3s, height 0.3s;
+  pointer-events: none;
+}
+.theme-splash-card:hover .theme-splash-card-stripe {
+  opacity: 0.5;
+  width: 100px; height: 100px;
+}
+.theme-splash-train  .theme-splash-card-stripe { background: radial-gradient(circle at top right, #ffb840, transparent); }
+.theme-splash-punjab .theme-splash-card-stripe { background: radial-gradient(circle at top right, #ff7040, transparent); }
+.theme-splash-jammu  .theme-splash-card-stripe { background: radial-gradient(circle at top right, #30d870, transparent); }
+.theme-splash-english .theme-splash-card-stripe{ background: radial-gradient(circle at top right, #9060ff, transparent); }
+
+/* Bottom gradient lift per card */
+.theme-splash-card-content {
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%) !important;
+}
+
+/* Bigger, richer cards on desktop */
+@media (min-width: 700px) {
+  .theme-splash-card {
+    min-height: 280px !important;
+    border-radius: 22px !important;
+  }
+  .theme-splash-card-emoji {
+    font-size: 56px !important;
+    margin-bottom: 10px !important;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+  .theme-splash-card:hover .theme-splash-card-emoji {
+    transform: scale(1.2) translateY(-6px) !important;
+  }
+  .theme-splash-card-name { font-size: 17px !important; font-weight: 800 !important; }
+  .theme-splash-card-sub  { font-size: 12px !important; }
+  .theme-splash-card-tag  { font-size: 10px !important; letter-spacing: 2.5px !important; margin-top: 8px !important; padding: 4px 12px !important; }
+}
+
+/* Glowing pulsing enter prompt */
+.theme-splash-footnote {
+  animation: splashFootnotePulse 3s ease-in-out infinite !important;
+}
+@keyframes splashFootnotePulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.5; }
+}
+
+/* Splash inner max width */
+.theme-splash-inner {
+  max-width: 1000px !important;
+}
+
+/* Bigger, bolder title */
+.theme-splash-title {
+  font-size: clamp(32px, 6vw, 64px) !important;
+  letter-spacing: 2px !important;
+  line-height: 1.1 !important;
+}
+.theme-splash-logo {
+  font-size: 64px !important;
+  margin-bottom: -8px !important;
+}
+
+/* ==========================================================================
+   MOBILE PANEL SCROLL FIX — ensures content never clips off-screen
+   ========================================================================== */
+@media (max-aspect-ratio: 13/10) {
+
+  /* Critical: train-compartment must be a proper grid, not overflow:hidden globally */
+  .train-compartment {
+    display: grid !important;
+    grid-template-rows: 46vh 1fr !important;
+    height: 100dvh !important;       /* dvh = dynamic viewport height (handles browser chrome) */
+    width: 100vw !important;
+    overflow: hidden !important;
+  }
+
+  /* The panels grid cell must shrink to fill remaining space, NOT overflow */
+  .compartment-panels {
+    grid-row: 2 !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: 100% !important;         /* fill the grid row */
+    min-height: 0 !important;        /* ← CRITICAL: allows flex/grid child to scroll */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #0b0f14 !important;
+    border-top: 1.5px solid rgba(255,255,255,0.08) !important;
+    box-sizing: border-box !important;
+    /* Enough bottom padding to clear the fixed player bar (62px) + gap (14px) + safety (14px) */
+    padding-bottom: 90px !important;
+    scroll-behavior: smooth !important;
+  }
+
+  /* Sticky tabs must not grow (locks position at top during scroll) */
+  .mobile-tabs-nav {
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+    background: #0b0f14 !important;
+    border-bottom: 1.5px solid rgba(255,255,255,0.08) !important;
+  }
+
+  /* All panel cards: position:relative, height:auto, no fixed heights */
+  .glass-control-panel,
+  .time-of-day-card,
+  .clamped-ticket-hotspot,
+  .vintage-frame,
+  #switchboardPanel {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex-shrink: 0 !important;         /* don't let flex compress content */
+    transform: none !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  /* Console switches grid: 2-col, no fixed height */
+  .console-switches,
+  .glass-control-panel {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 14px !important;
+    flex-shrink: 0 !important;
+    height: auto !important;
+  }
+
+  /* Switch items: compact but never clipped */
+  .glass-switch-item {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+    min-height: 44px !important;       /* touch target minimum */
+  }
+
+  /* Hide long descriptions to save space */
+  .switch-desc { display: none !important; }
+  .switch-title { font-size: 11px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+
+  /* Toggle sizing */
+  .glass-toggle {
+    width: 32px !important;
+    height: 17px !important;
+    flex-shrink: 0 !important;
+  }
+  .toggle-nob { width: 13px !important; height: 13px !important; }
+
+  /* Panel header spans full width */
+  .panel-header {
+    grid-column: span 2 !important;
+    font-size: 10px !important;
+    padding: 8px 0 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Change Vibe widget inline in panel: no absolute positioning */
+  .theme-explorer-widget-mobile {
+    flex-shrink: 0 !important;
+    margin: 8px 14px !important;
+    width: calc(100% - 28px) !important;
+  }
+  .theme-explorer-widget-mobile .theme-explorer-trigger {
+    width: 100% !important;
+    border-radius: 12px !important;
+    justify-content: center !important;
+    padding: 13px 16px !important;
+    font-size: 12px !important;
+  }
+  .theme-explorer-widget-mobile .theme-explorer-panel {
+    width: 100% !important;
+    position: relative !important;
+    bottom: auto !important;
+    top: auto !important;
+    margin-top: 8px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: all 0.25s ease;
+  }
+  .theme-explorer-widget-mobile.open .theme-explorer-panel {
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+  }
+  .theme-explorer-widget-mobile .theme-card {
+    margin-bottom: 6px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Ticket card: full width inline, no absolute overlay */
+  .clamped-ticket-hotspot {
+    background: transparent !important;
+    border: none !important;
+    padding: 14px !important;
+  }
+  .clamped-ticket-hotspot .ticket-zoom-card {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+  }
+
+  /* Vintage poster frame */
+  .vintage-frame {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: rgba(15,23,42,0.5) !important;
+    padding: 16px !important;
+  }
+  .vintage-frame .frame-glass { width: 130px !important; }
+
+  /* Sound board triggers: wrap neatly */
+  .sound-board-triggers {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 0 14px 14px !important;
+  }
+  .trigger-btn {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    padding: 10px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Train map / schedule if present */
+  .control-label {
+    font-size: 10px !important;
+    padding: 10px 14px 4px !important;
+    display: block !important;
+  }
+
+  /* Fixed music player at bottom — always visible */
+  .spotify-glass-player {
+    position: fixed !important;
+    bottom: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 94vw !important;
+    max-width: 520px !important;
+    height: 62px !important;
+    z-index: 200 !important;
+    padding: 0 14px !important;
+    border-radius: 30px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Album art compact */
+  .album-art-container {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+  }
+  .song-title  { font-size: 12px !important; max-width: 120px !important; }
+  .song-artist { font-size: 10px !important; }
+  .control-btn-icon { font-size: 16px !important; padding: 4px !important; }
+  .control-btn-icon.main-play { font-size: 22px !important; }
+  .volume-slider-container { display: none !important; }
+  .playlist-pill-btn {
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Playlist menu: anchored above player */
+  .glass-playlist-menu {
+    position: fixed !important;
+    bottom: 82px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: min(290px, 92vw) !important;
+    max-height: 52vh !important;
+    overflow-y: auto !important;
+    z-index: 300 !important;
+  }
+}
