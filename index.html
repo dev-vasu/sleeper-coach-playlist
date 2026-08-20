@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon-train.svg">
+  <link rel="alternate icon" href="/favicon-train.svg">
+  <title>Sleeper Coach Playlist</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind:wght@500;700&family=Outfit:wght@300;400;500;700;900&family=Rozha+One&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=2.5">
+</head>
+<body class="theme-day route-hindi">
+
+  <!-- ✦ Theme Selector Splash (shown on first visit via sessionStorage) -->
+  <div class="theme-splash-overlay" id="themeSplashOverlay">
+    <!-- Ambient orbs for depth -->
+    <div class="splash-orb splash-orb-gold"></div>
+    <div class="splash-orb splash-orb-purple"></div>
+    <div class="splash-orb splash-orb-green"></div>
+    <div class="theme-splash-inner">
+
+      <div class="theme-splash-header">
+        <div class="theme-splash-logo">🚂</div>
+        <h1 class="theme-splash-title">स्लीपर कोच प्लेलिस्ट</h1>
+        <p class="theme-splash-subtitle">Choose your vibe for tonight's journey</p>
+      </div>
+
+      <div class="theme-splash-grid">
+
+        <!-- Classic Train -->
+        <button class="theme-splash-card theme-splash-train" id="splashPickTrain" data-href="/">
+          <div class="theme-splash-card-bg"></div>
+          <div class="theme-splash-card-stripe"></div>
+          <div class="theme-splash-card-content">
+            <div class="theme-splash-card-emoji">🚂</div>
+            <div class="theme-splash-card-name">Classic Train</div>
+            <div class="theme-splash-card-sub">Hindi classics · Retro sleeper coach</div>
+            <div class="theme-splash-card-tag">HINDI</div>
+          </div>
+        </button>
+
+        <!-- Sad Punjabi -->
+        <button class="theme-splash-card theme-splash-punjab" id="splashPickPunjab" data-href="/punjab">
+          <div class="theme-splash-card-bg"></div>
+          <div class="theme-splash-card-stripe"></div>
+          <div class="theme-splash-card-content">
+            <div class="theme-splash-card-emoji">🌾</div>
+            <div class="theme-splash-card-name">Sad Punjabi</div>
+            <div class="theme-splash-card-sub">सदा-ए-हिज्र · Sufi folk</div>
+            <div class="theme-splash-card-tag">PUNJABI</div>
+          </div>
+        </button>
+
+        <!-- Jammu Dogri -->
+        <button class="theme-splash-card theme-splash-jammu" id="splashPickJammu" data-href="/jammu">
+          <div class="theme-splash-card-bg"></div>
+          <div class="theme-splash-card-stripe"></div>
+          <div class="theme-splash-card-content">
+            <div class="theme-splash-card-emoji">🏔️</div>
+            <div class="theme-splash-card-name">Jammu (Dogri)</div>
+            <div class="theme-splash-card-sub">Valley folk · Mountain vibes</div>
+            <div class="theme-splash-card-tag">DOGRI</div>
+          </div>
+        </button>
+
+        <!-- 80's English R&B -->
+        <button class="theme-splash-card theme-splash-english" id="splashPickEnglish" data-href="/english">
+          <div class="theme-splash-card-bg"></div>
+          <div class="theme-splash-card-stripe"></div>
+          <div class="theme-splash-card-content">
+            <div class="theme-splash-card-emoji">🎵</div>
+            <div class="theme-splash-card-name">80's English R&B</div>
+            <div class="theme-splash-card-sub">Timeless music · Rainy city night</div>
+            <div class="theme-splash-card-tag">ENGLISH</div>
+          </div>
+        </button>
+
+      </div>
+
+      <p class="theme-splash-footnote">✦ You can always switch themes from inside the experience</p>
+    </div>
+  </div>
+
+  <!-- Mobile Portrait Rotation Prompt Overlay -->
+  <div class="orientation-overlay" id="orientationOverlay">
+    <div class="rotation-icon-wrapper">
+      <svg class="rotate-phone-svg" viewBox="0 0 100 100">
+        <path d="M30 15 H70 V85 H30 Z" fill="none" stroke="#e2b865" stroke-width="3" stroke-linejoin="round" />
+        <circle cx="50" cy="78" r="3" fill="#e2b865" />
+        <path d="M50 10 A 35 35 0 0 1 85 45" fill="none" stroke="#e2b865" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" />
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#e2b865" />
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <h2>ROTATE DEVICE / फोन घुमाएं</h2>
+    <p>Please rotate your phone to landscape mode for the immersive window seat experience.</p>
+    <p class="hindi-p">केबिन के बेहतर और वास्तविक अनुभव के लिए कृपया अपने फोन को घुमाएं (लैंडस्केप मोड)।</p>
+    <p class="pc-best-tag" style="margin-top: 24px; font-size: 11px; font-weight: 500; opacity: 0.65; letter-spacing: 0.5px;">💻 BEST EXPERIENCED ON LAPTOP/PC // लैपटॉप या कंप्यूटर पर सर्वोत्तम अनुभव</p>
+  </div>
+  <!-- Immersive Fullscreen Cabin Viewport -->
+  <div class="train-compartment light-on" id="compartment">
+    
+    <div class="compartment-visuals" id="compartmentVisuals">
+      <!-- Ambient mood lighting layers -->
+      <div class="ambient-overlay" id="ambientOverlay"></div>
+      <div class="spotlight-overlay" id="spotlightOverlay"></div>
+      
+      <div class="dust-container" id="dustContainer"></div>
+
+      <!-- 1. Window Viewport (Moving scenery & sliding shutters - sits behind the canvas) -->
+      <div class="window-viewport" id="windowViewport">
+        <!-- Sky & Stars -->
+        <div class="scenery-sky" id="scenerySky">
+          <div class="sun-moon" id="sunMoon"></div>
+          <div class="cloud-layer" id="cloudLayer">
+            <div class="cloud c1"></div>
+            <div class="cloud c2"></div>
+          </div>
+          <div class="stars-layer" id="starsLayer"></div>
+        </div>
+
+
+
+        <!-- Title floating in the sky (framed cleanly by the window window) -->
+        <div class="window-sky-title" id="windowSkyTitle">
+          <div class="line1">स्लीपर कोच</div>
+          <div class="line2">प्लेलिस्ट</div>
+        </div>
+
+        <!-- Parallax Layers -->
+        <div class="scenery-layer layer-mountains" id="layerMountains"></div>
+        <div class="scenery-layer layer-landscape" id="layerLandscape"></div>
+        
+        <!-- Telegraph wires -->
+        <div class="scenery-layer layer-telegraph" id="layerTelegraph">
+          <div class="wire-container">
+            <svg class="wire-svg" viewBox="0 0 1200 300" preserveAspectRatio="none">
+              <path d="M-100,80 Q200,160 500,80 T1100,80 T1700,80" fill="none" stroke="#111" stroke-width="1.2" class="train-wire" />
+              <path d="M-100,95 Q200,175 500,95 T1100,95 T1700,95" fill="none" stroke="#111" stroke-width="0.8" class="train-wire" />
+            </svg>
+          </div>
+          <div class="pole p1"><div class="crossbar"></div></div>
+          <div class="pole p2"><div class="crossbar"></div></div>
+          <div class="pole p3"><div class="crossbar"></div></div>
+        </div>
+
+        <div class="scenery-layer layer-foreground" id="layerForeground"></div>
+        <div class="weather-overlay" id="weatherOverlay"></div>
+
+        <!-- Shutters -->
+        <!-- Glass Shutter -->
+        <div class="shutter glass-shutter" id="shutterGlass">
+          <div class="glass-glare"></div>
+          <div class="shutter-handle glass-handle">
+            <div class="handle-grip"></div>
+            <div class="handle-latches"><span></span><span></span></div>
+          </div>
+        </div>
+
+        <!-- Louver Shutter -->
+        <div class="shutter metal-shutter" id="shutterMetal">
+          <div class="shutter-handle metal-handle">
+            <div class="handle-grip"></div>
+            <div class="handle-latches"><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Fullscreen Chroma-Key Extracted Cabin Overlay Canvas -->
+      <canvas id="cabinCanvas" class="cabin-canvas"></canvas>
+
+      <!-- Real-time digital clock and online count floating on the wall -->
+      <div class="sky-clock" id="skyClock">9:28 am</div>
+      <div class="sky-online-counter" id="skyOnlineCounter">
+        <span class="pulsing-green-dot"></span>
+        <span><strong id="onlineCountNumber">30</strong> online</span>
+      </div>
+
+      <!-- Hidden YT Player Container for API Engine -->
+      <div id="ytAudioPlayer" style="position: absolute; width: 200px; height: 200px; left: -9999px; top: -9999px; pointer-events: none;"></div>
+
+      <!-- Spinning Cabin Fan Blades -->
+      <div class="fan-blades-overlay" id="fanBlades">
+        <div class="blade b1"></div>
+        <div class="blade b2"></div>
+        <div class="blade b3"></div>
+        <div class="fan-hub"></div>
+      </div>
+
+      <!-- Emergency Pull Chain -->
+      <div class="emergency-chain-box" id="emergencyChain">
+        <div class="chain-notice">
+          <span>जंजीर खींचें</span>
+          <span style="font-size: 5px; opacity: 0.85;">PULL CHAIN</span>
+        </div>
+        <div class="chain-pull-mechanism" id="chainPull">
+          <svg class="chain-wire-svg" viewBox="0 0 20 200">
+            <line x1="10" y1="0" x2="10" y2="130" class="chain-line" />
+            <circle cx="10" cy="130" r="10" class="chain-handle-ring" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Illustrated BPL Stereo Deck Hotspot (Clicking it focuses the Spotify playlist menu!) -->
+      <div class="bpl-tape-deck-hitbox" id="bplTapeDeck" title="Click to Select Playlist"></div>
+
+      <!-- Cutting Chai Glass Hotspot -->
+      <div class="prop-chai-hotspot" id="chaiGlass" title="Drink Hot Ginger Chai">
+        <div class="tea-steam">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- DESKTOP ONLY: Change Vibe widget (hidden on mobile via CSS) -->
+      <div class="theme-explorer-widget theme-explorer-widget-desktop" id="themeExplorerDesktop">
+        <button class="theme-explorer-trigger" id="themeExplorerTriggerDesktop" title="Explore other vibes">
+          <span class="theme-explorer-icon">🎭</span>
+          <span class="theme-explorer-label">Change Vibe</span>
+          <span class="theme-explorer-arrow">›</span>
+        </button>
+        <div class="theme-explorer-panel" id="themeExplorerPanelDesktop">
+          <div class="theme-explorer-header">
+            <span>✦ Other Vibes</span>
+            <button class="theme-explorer-close" id="themeExplorerCloseDesktop">×</button>
+          </div>
+          <a href="/punjab" class="theme-card theme-card-punjab">
+            <div class="theme-card-glow"></div>
+            <div class="theme-card-icon">🌾</div>
+            <div class="theme-card-info">
+              <div class="theme-card-name">SAD PUNJABI</div>
+              <div class="theme-card-desc">सदा-ए-हिज्र · Sufi folk classics</div>
+            </div>
+            <div class="theme-card-arrow">→</div>
+          </a>
+          <a href="/jammu" class="theme-card theme-card-jammu">
+            <div class="theme-card-glow"></div>
+            <div class="theme-card-icon">🏔️</div>
+            <div class="theme-card-info">
+              <div class="theme-card-name">JAMMU (DOGRI)</div>
+              <div class="theme-card-desc">Valley folk · Mountain vibes</div>
+            </div>
+            <div class="theme-card-arrow">→</div>
+          </a>
+          <a href="/english" class="theme-card theme-card-english">
+            <div class="theme-card-glow"></div>
+            <div class="theme-card-icon">🎵</div>
+            <div class="theme-card-info">
+              <div class="theme-card-name">80's ENGLISH R&B</div>
+              <div class="theme-card-desc">Timeless music · Rainy city night</div>
+            </div>
+            <div class="theme-card-arrow">→</div>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Panel Section (Stack scrollably on mobile portrait) -->
+    <div class="compartment-panels active-tab-console" id="compartmentPanels">
+      <!-- Mobile Tabs Navigation -->
+      <div class="mobile-tabs-nav" id="mobileTabsNav">
+        <button class="tab-nav-btn active" data-tab="console">🎛️ Console</button>
+        <button class="tab-nav-btn" data-tab="schedule">📋 Schedule</button>
+        <button class="tab-nav-btn" data-tab="ticket">🎟️ Ticket</button>
+      </div>
+
+      <!-- MOBILE ONLY: Change Vibe widget (hidden on desktop via CSS) -->
+      <div class="theme-explorer-widget theme-explorer-widget-mobile" id="themeExplorer">
+        <button class="theme-explorer-trigger" id="themeExplorerTrigger" title="Explore other vibes">
+          <span class="theme-explorer-icon">🎭</span>
+          <span class="theme-explorer-label">Change Vibe</span>
+          <span class="theme-explorer-arrow">›</span>
+        </button>
+        <div class="theme-explorer-panel" id="themeExplorerPanel">
+          <div class="theme-explorer-header">
+            <span>✦ Other Vibes</span>
+            <button class="theme-explorer-close" id="themeExplorerClose">×</button>
+          </div>
+          <a href="/punjab" class="theme-card theme-card-punjab">
+            <div class="theme-card-glow"></div>
+            <div class="theme-card-icon">🌾</div>
+            <div class="theme-card-info">
+              <div class="theme-card-name">SAD PUNJABI</div>
+              <div class="theme-card-desc">सदा-ए-हिज्र · Sufi folk classics</div>
+            </div>
+            <div class="theme-card-arrow">→</div>
+          </a>
+          <a href="/jammu" class="theme-card theme-card-jammu">
+            <div class="theme-card-glow"></div>
+            <div class="theme-card-icon">🏔️</div>
+            <div class="theme-card-info">
+              <div class="theme-card-name">JAMMU (DOGRI)</div>
+              <div class="theme-card-desc">Valley folk · Mountain vibes</div>
+            </div>
+            <div class="theme-card-arrow">→</div>
+          </a>
+          <a href="/english" class="theme-card theme-card-english">
+            <div class="theme-card-glow"></div>
+            <div class="theme-card-icon">🎵</div>
+            <div class="theme-card-info">
+              <div class="theme-card-name">80's ENGLISH R&B</div>
+              <div class="theme-card-desc">Timeless music · Rainy city night</div>
+            </div>
+            <div class="theme-card-arrow">→</div>
+          </a>
+        </div>
+      </div>
+      <!-- Clamped Railway Ticket -->
+      <div class="clamped-ticket-hotspot" id="clampedTicket" title="Read Ticket Details">
+        <!-- Zoom view triggered on click -->
+        <div class="ticket-zoom-card" id="ticketZoomCard">
+          <div class="ticket-header-logo">भारतीय रेल / INDIAN RAILWAYS</div>
+          <div class="ticket-grid">
+            <div class="t-cell"><small>PASSENGER</small><strong>VS</strong></div>
+            <div class="t-cell"><small>CLASS</small><strong>SLEEPER (SL)</strong></div>
+            <div class="t-cell"><small>TRAIN</small><strong>12301 RAJDHANI EXP</strong></div>
+            <div class="t-cell"><small>BERTH</small><strong>S6 / 23 (WINDOW)</strong></div>
+            <div class="t-cell"><small>FROM</small><strong>NEW DELHI (NDLS)</strong></div>
+            <div class="t-cell"><small>TO</small><strong>HOWRAH JN (HWH)</strong></div>
+            <div class="t-cell"><small>DATE</small><strong>14 OCT 1995</strong></div>
+            <div class="t-cell"><small>FARE</small><strong>Rs. 320/- ONLY</strong></div>
+          </div>
+          <div class="ticket-barcode">||||| | || |||| | ||| ||</div>
+          <span class="click-to-close">CLICK TICKET TO CLOSE</span>
+        </div>
+      </div>
+
+      <!-- Vintage Framed Poster -->
+      <div class="vintage-frame" id="vintagePoster">
+        <div class="frame-glass">
+          <img src="retro_poster.jpg" alt="Vintage Poster" class="framed-poster">
+        </div>
+      </div>
+
+      <!-- Glassmorphic Control Panel (Cabin Toggles) -->
+      <div class="glass-control-panel" id="switchboardPanel">
+        <div class="panel-header">CABIN CONSOLE / केबिन कंसोल</div>
+        
+        <div class="glass-switch-item" id="btnCabinLight" title="Toggle Cabin Light">
+          <div class="switch-main">
+            <div class="switch-meta">
+              <span class="switch-title">LIGHT / रोशनी</span>
+              <span class="switch-desc">Warm night lamp glare</span>
+            </div>
+            <div class="glass-toggle" id="lightToggleIndicator">
+              <div class="toggle-nob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-switch-item" id="btnFan" title="Toggle Ceiling Fan">
+          <div class="switch-main">
+            <div class="switch-meta">
+              <span class="switch-title">FAN / पंखा</span>
+              <span class="switch-desc">Circulate vintage ceiling blower</span>
+            </div>
+            <div class="glass-toggle" id="fanToggleIndicator">
+              <div class="toggle-nob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-switch-item" id="btnWind" title="Toggle Cozy Wind Draft">
+          <div class="switch-main">
+            <div class="switch-meta">
+              <span class="switch-title">WIND / हवा</span>
+              <span class="switch-desc">Whistling draft static</span>
+            </div>
+            <div class="glass-toggle" id="windToggleIndicator">
+              <div class="toggle-nob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-switch-item" id="btnRain" title="Toggle Monsoon Rain">
+          <div class="switch-main">
+            <div class="switch-meta">
+              <span class="switch-title">RAIN / बारिश</span>
+              <span class="switch-desc">Monsoon raindrops on window</span>
+            </div>
+            <div class="glass-toggle" id="rainToggleIndicator">
+              <div class="toggle-nob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-switch-item" id="btnShutter" title="Toggle Window Shutter">
+          <div class="switch-main">
+            <div class="switch-meta">
+              <span class="switch-title">SHUTTER / शटर</span>
+              <span class="switch-desc">Slide window louvers down</span>
+            </div>
+            <div class="glass-toggle" id="shutterToggleIndicator">
+              <div class="toggle-nob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-switch-item" id="btnFullscreen" title="Toggle Full Screen Mode">
+          <div class="switch-main">
+            <div class="switch-meta">
+              <span class="switch-title">FULL SCREEN / पूर्ण स्क्रीन</span>
+              <span class="switch-desc">Maximize cabin window</span>
+            </div>
+            <div class="glass-toggle" id="fullscreenToggleIndicator">
+              <div class="toggle-nob"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coach Plaque -->
+      <div class="time-of-day-card" id="timeOfDayCard">
+        <div class="screw-head top-left"></div>
+        <div class="screw-head top-right"></div>
+        <div class="screw-head bottom-left"></div>
+        <div class="screw-head bottom-right"></div>
+        
+        <label class="control-label">COACH SCHEDULE / समय सारणी</label>
+        <div class="time-selector">
+          <button class="time-btn" data-time="morning">🌅 MORNING</button>
+          <button class="time-btn active" data-time="day">🌞 DAY</button>
+          <button class="time-btn" data-time="sunset">🌇 SUNSET</button>
+          <button class="time-btn" data-time="night">🌙 NIGHT</button>
+        </div>
+
+        <div id="trainTypeSection">
+          <hr class="card-section-divider">
+          <label class="control-label">TRAIN TYPE / रेलगाड़ी प्रकार</label>
+          <div class="train-selector-container">
+            <!-- Skeuomorphic train selector dial -->
+            <div class="train-rotary-dial" id="trainDial" title="Click Train Type to Switch">
+              <div class="dial-notch"></div>
+            </div>
+            <div class="train-labels-grid">
+              <span class="train-label active" data-type="rajdhani" style="top: 0px; left: 50%; transform: translateX(-50%);">RAJDHANI</span>
+              <span class="train-label" data-type="passenger" style="top: 30px; right: 2px;">LOCAL</span>
+              <span class="train-label" data-type="steam" style="bottom: 0px; left: 50%; transform: translateX(-50%);">STEAM</span>
+              <span class="train-label" data-type="goods" style="top: 30px; left: 2px;">FREIGHT</span>
+            </div>
+          </div>
+          <hr class="card-section-divider">
+        </div>
+
+        <label class="control-label">SOUND BOARD / ध्वनि पट्टिका</label>
+        <div class="sound-board-triggers">
+          <button class="trigger-btn" id="btnMuteAmbience" title="Mute/Unmute Ambient Train Noise">🔇 AMBIENCE</button>
+          <button class="trigger-btn" id="btnHorn">📢 HORN</button>
+          <button class="trigger-btn" id="btnChai">☕ TEA CALLS</button>
+          <button class="trigger-btn" id="btnAnnounce">🔔 ANNOUNCE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         SPOTIFY-STYLE GLASSMORPHIC MUSIC PLAYER BAR (Floats elegantly at bottom)
+         ========================================================================== -->
+    <div class="spotify-glass-player" id="spotifyPlayer">
+      
+      <div class="player-left-col">
+        <div class="album-art-container">
+          <div class="album-art" id="playerAlbumArt"><img src="https://i.ytimg.com/vi/iSUK1QoK9-E/hqdefault.jpg" alt="Art" style="width: 100%; height: 100%; object-fit: cover;"></div>
+        </div>
+        <div class="song-meta">
+          <span class="song-title" id="playerSongTitle">Pehla Nasha</span>
+          <span class="song-artist" id="playerSongArtist">Sleeper Class FM</span>
+        </div>
+      </div>
+      
+      <div class="player-center-col">
+        <div class="player-controls">
+          <button class="control-btn-icon" id="btnPrev" title="Previous Tape">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1.1em; height: 1.1em; vertical-align: middle;"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="control-btn-icon main-play" id="btnPlayPause" title="Play">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1.1em; height: 1.1em; vertical-align: middle;"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="control-btn-icon" id="btnNext" title="Next Tape">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1.1em; height: 1.1em; vertical-align: middle;"><path d="M6 18l8.5-6L6 6zm9-12v12h2V6z"/></svg>
+          </button>
+        </div>
+        <div class="progress-container">
+          <span class="time-elapsed" id="timeElapsed">0:00</span>
+          <div class="progress-bar-bg" id="progressBarBg">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
+          </div>
+          <span class="time-total" id="timeTotal">--:--</span>
+        </div>
+      </div>
+      
+      <div class="player-right-col">
+        <button class="playlist-pill-btn" id="btnPlaylistSelect">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1.1em; height: 1.1em; margin-right: 6px; vertical-align: middle;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg> SELECT TAPE
+        </button>
+        
+        <div class="volume-slider-container">
+          <span class="vol-icon" id="volIcon">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1.2em; height: 1.2em; vertical-align: middle;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </span>
+          <input type="range" id="spotifyVolumeSlider" min="0" max="100" value="80" class="vol-range">
+        </div>
+      </div>
+
+      <!-- Glassmorphic playlist dropdown menu -->
+      <div class="glass-playlist-menu" id="playlistMenu">
+        <!-- Scrollable dynamic playlist list -->
+        <div id="dynamicMenuItems" style="display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; scrollbar-width: thin;"></div>
+        
+        <div class="menu-item" id="menuItemCustom" data-id="custom_stream" data-youtube="custom" style="border-top: 1px solid rgba(255,255,255,0.15);">
+          <span class="item-color-dot" style="background: #2c3e50;"></span>
+          <span class="item-title">Custom YouTube Link...</span>
+        </div>
+        
+        <!-- Custom YouTube loading form embedded inside dropdown -->
+        <div class="custom-tape-form" id="customTapeForm" style="display: none; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <input type="text" id="ytUrlInput" placeholder="Paste YouTube link / ID..." class="custom-yt-input" style="width: 100%; margin-bottom: 6px; box-sizing: border-box;">
+          <button class="mixtape-btn" id="btnLoadCustomTape" style="width: 100%; box-sizing: border-box;">LOAD TAPE</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="/app.js?v=1.77"></script>
+</body>
+</html>
+
+
+
+
+
