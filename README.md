@@ -1,8 +1,26 @@
 # 🚂 Sleeper Coach Playlist — Window Seat Experience
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel&logoColor=white" />
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Vibes-Retro-orange?style=for-the-badge" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" />
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" />
+  <img src="https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white" />
+</p>
+
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Fkb3kwaG00dGNiaTBnd3gyM3N0dWR0eHp6czE5ZHd2OGYxbnd3eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VzQ9mLasiUpXy/giphy.gif" alt="Aesthetic Lo-fi Train Journey" width="100%" style="border-radius: 12px; max-height: 300px; object-fit: cover;" />
+</p>
+
 > An immersive, interactive, and retro musical journey across regional India. Take the window seat, slide down the shutter, sip a hot ginger chai, and let the rhythmic train sounds carry you away.
 
-🌐 **[Experience it Live →](https://sleeper-coach-playlist.vercel.app)**
+🌐 **[Experience the Live Journey →](https://sleeper-coach-playlist.vercel.app)**
 
 ---
 
@@ -13,21 +31,21 @@ Explore the beautiful visual layouts custom-designed for each theme:
 <table>
   <tr>
     <td width="50%">
-      <p align="center"><b>🚂 Classic Train</b></p>
+      <p align="center"><b>🚂 Classic Train (Hindi Retro)</b></p>
       <img src="assets/classic_train_preview.jpg" alt="Classic Train Cabin" width="100%" style="border-radius: 10px;" />
     </td>
     <td width="50%">
-      <p align="center"><b>🌾 Sad Punjabi</b></p>
+      <p align="center"><b>🌾 Sad Punjabi (Sufi Folk)</b></p>
       <img src="assets/punjab_preview.png" alt="Sad Punjabi Theme" width="100%" style="border-radius: 10px;" />
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <p align="center"><b>🏔️ Jammu Dogri</b></p>
+      <p align="center"><b>🏔️ Jammu Dogri (Valley Folk)</b></p>
       <img src="assets/jammu_preview.png" alt="Jammu Dogri Theme" width="100%" style="border-radius: 10px;" />
     </td>
     <td width="50%">
-      <p align="center"><b>🎵 80's English R&B</b></p>
+      <p align="center"><b>🎵 80's English R&B (Cozy Rain)</b></p>
       <img src="assets/english_preview.png" alt="English R&B Theme" width="100%" style="border-radius: 10px;" />
     </td>
   </tr>
