@@ -3021,16 +3021,25 @@ body.route-english #btnAnnounce {
     position: relative !important;
     bottom: auto !important;
     top: auto !important;
-    transform: none !important;
     margin-top: 8px !important;
-    max-height: none !important;
-    overflow: visible !important;
-    pointer-events: auto !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(8px);
+    transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   }
   .theme-explorer-widget-mobile.open .theme-explorer-panel {
+    max-height: 220px !important;
     opacity: 1 !important;
-    transform: none !important;
     pointer-events: auto !important;
+    transform: translateY(0) !important;
+    overflow-y: auto !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: rgba(10, 12, 18, 0.85) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
   }
   .theme-explorer-widget-mobile .theme-card {
     padding: 12px 14px !important;
@@ -3236,17 +3245,26 @@ body.route-english #btnAnnounce {
     bottom: auto !important;
     top: auto !important;
     margin-top: 8px !important;
-    max-height: none !important;
-    overflow: visible !important;
-    opacity: 1 !important;
-    pointer-events: none;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
     transform: translateY(8px);
-    transition: all 0.25s ease;
+    transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   }
   .theme-explorer-widget-mobile.open .theme-explorer-panel {
+    max-height: 220px !important;
+    opacity: 1 !important;
     pointer-events: auto !important;
     transform: translateY(0) !important;
+    overflow-y: auto !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: rgba(10, 12, 18, 0.85) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
   }
+
   .theme-explorer-widget-mobile .theme-card {
     margin-bottom: 6px !important;
     border-radius: 12px !important;
