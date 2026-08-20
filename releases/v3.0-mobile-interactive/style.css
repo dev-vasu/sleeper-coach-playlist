@@ -3421,3 +3421,55 @@ body.route-english #btnAnnounce {
   }
 }
 
+/* ── 5. Mobile Fullscreen Mode CSS Styles ────────────────────────────────── */
+body.fullscreen-active .compartment-panels {
+  display: none !important;
+}
+body.fullscreen-active .spotify-glass-player {
+  display: none !important;
+}
+body.fullscreen-active .theme-explorer-widget-desktop,
+body.fullscreen-active .theme-explorer-widget-mobile {
+  display: none !important;
+}
+
+@media (max-aspect-ratio: 13/10) {
+  body.fullscreen-active .train-compartment {
+    grid-template-rows: 100dvh 0px !important;
+    height: 100dvh !important;
+  }
+  body.fullscreen-active .compartment-visuals {
+    height: 100dvh !important;
+  }
+}
+
+/* Floating Exit Button */
+.exit-fullscreen-btn {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  z-index: 999999 !important;
+  background: rgba(15, 18, 25, 0.75) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 30px !important;
+  padding: 8px 16px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+  transition: background 0.2s, transform 0.2s !important;
+}
+.exit-fullscreen-btn:hover {
+  background: rgba(25, 30, 42, 0.9) !important;
+  transform: scale(1.04) !important;
+}
+.exit-fullscreen-btn:active {
+  transform: scale(0.96) !important;
+}
+
+

@@ -2149,9 +2149,43 @@ function setupInteractiveToggles() {
   const syncFullscreenUI = () => {
     const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
     const isPseudoFS = document.body.classList.contains('pseudo-fullscreen');
-    if (fullscreenInd) {
-      fullscreenInd.classList.toggle('active', isFS || isPseudoFS);
+    const isActive = isFS || isPseudoFS;
+    
+    document.body.classList.toggle('fullscreen-active', isActive);
+    
+    let exitBtn = document.getElementById('exitFullscreenBtn');
+    if (isActive) {
+      if (!exitBtn) {
+        exitBtn = document.createElement('button');
+        exitBtn.id = 'exitFullscreenBtn';
+        exitBtn.className = 'exit-fullscreen-btn';
+        exitBtn.innerHTML = 'Exit Full Screen ✕';
+        document.body.appendChild(exitBtn);
+        exitBtn.addEventListener('click', () => {
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          } else {
+            document.body.classList.remove('pseudo-fullscreen');
+            syncFullscreenUI();
+          }
+        });
+      }
+    } else {
+      if (exitBtn) {
+        exitBtn.remove();
+      }
     }
+
+    if (fullscreenInd) {
+      fullscreenInd.classList.toggle('active', isActive);
+    }
+
+    setTimeout(() => {
+      if (typeof alignCompartmentElements === 'function') {
+        alignCompartmentElements();
+      }
+    }, 100);
   };
 
   if (btnFullscreen) {
@@ -2187,7 +2221,6 @@ function setupInteractiveToggles() {
         // Fallback for iOS/iPhone Safari which does not support requestFullscreen on standard elements
         document.body.classList.toggle('pseudo-fullscreen');
         syncFullscreenUI();
-        alignCompartmentElements();
       }
     });
 
